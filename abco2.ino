@@ -3,6 +3,7 @@
 //UECS ccm "TCTemp" sending test Ver1.0
 //By Masafumi Horimoto 2019/09/12
 //////////////////////////////////////////
+// -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
 
@@ -41,18 +42,46 @@ UECSOriginalAttribute U_orgAttribute;
 const int U_HtmlLine = 4; //Total number of HTML table rows.
 const char TempUNIT[] PROGMEM= "℃";
 
-//●表示素材の定義(1)数値表示
+//●熱電対温度センサの値
 //UECSSHOWDATA
-const char T1TEMP0[] PROGMEM= "T1温度";
-const char T1NOTE0[] PROGMEM= "";
+const char T1TEMP1[] PROGMEM= "T1温度";
+const char T1TEMP2[] PROGMEM= "T2温度";
+const char T1TEMP3[] PROGMEM= "T3温度";
+const char T1TEMP4[] PROGMEM= "T4温度";
+const char T1TEMP5[] PROGMEM= "T5温度";
+const char T1TEMP6[] PROGMEM= "T6温度";
+const char T1TEMP7[] PROGMEM= "T7温度";
+const char T1TEMP8[] PROGMEM= "T8温度";
+const char T1NOTE1[] PROGMEM= "";
+const char T1NOTE2[] PROGMEM= "";
+const char T1NOTE3[] PROGMEM= "";
+const char T1NOTE4[] PROGMEM= "";
+const char T1NOTE5[] PROGMEM= "";
+const char T1NOTE6[] PROGMEM= "";
+const char T1NOTE7[] PROGMEM= "";
+const char T1NOTE8[] PROGMEM= "";
 
 //表示用の値を格納する変数
 //小数桁数が1の場合、123が12.3と表示される
-signed long showValueTemp;
+signed long showValueTemp1;
+signed long showValueTemp2;
+signed long showValueTemp3;
+signed long showValueTemp4;
+signed long showValueTemp5;
+signed long showValueTemp6;
+signed long showValueTemp7;
+signed long showValueTemp8;
 
 //●表示素材の定義(2)選択肢表示
 //UECSSELECTDATA
-const char NAME1[] PROGMEM= "バルブ1の設定";
+const char VLVNAME1[] PROGMEM= "バルブ1の設定";
+const char VLVNAME2[] PROGMEM= "バルブ2の設定";
+const char VLVNAME3[] PROGMEM= "バルブ3の設定";
+const char VLVNAME4[] PROGMEM= "バルブ4の設定";
+const char VLVNAME5[] PROGMEM= "バルブ5の設定";
+const char VLVNAME6[] PROGMEM= "バルブ6の設定";
+const char VLVNAME7[] PROGMEM= "バルブ7の設定";
+const char VLVNAME8[] PROGMEM= "バルブ8の設定";
 const char NOTE1[] PROGMEM= "V1の設定";
 const char UECSOFF[] PROGMEM= "手動CLOSE";
 const char UECSON[] PROGMEM= "手動OPEN";
@@ -65,7 +94,14 @@ const char *stringSELECT[3]={
 
 //入力された選択肢の位置を受け取る変数
 //UECSOFFが0、UECSONで1、UECSAUTOで2になる
-signed long setONOFFAUTO;
+signed long setONOFFAUTO1;
+signed long setONOFFAUTO2;
+signed long setONOFFAUTO3;
+signed long setONOFFAUTO4;
+signed long setONOFFAUTO5;
+signed long setONOFFAUTO6;
+signed long setONOFFAUTO7;
+signed long setONOFFAUTO8;
 
 //●表示素材の定義(3)数値入力
 //UECSINPUTDATA
