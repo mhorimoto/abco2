@@ -61,7 +61,7 @@ const char T1NOTE6[] PROGMEM= "";
 const char T1NOTE7[] PROGMEM= "";
 const char T1NOTE8[] PROGMEM= "";
 
-//表示用の値を格納する変数
+//熱電対温度センサの値
 //小数桁数が1の場合、123が12.3と表示される
 signed long showValueTemp1;
 signed long showValueTemp2;
