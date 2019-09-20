@@ -72,7 +72,7 @@ signed long showValueTemp6;
 signed long showValueTemp7;
 signed long showValueTemp8;
 
-//●表示素材の定義(2)選択肢表示
+//バルブの設定内容(強制OPEN/CLOSE,自動)
 //UECSSELECTDATA
 const char VLVNAME1[] PROGMEM= "バルブ1の設定";
 const char VLVNAME2[] PROGMEM= "バルブ2の設定";
@@ -82,7 +82,14 @@ const char VLVNAME5[] PROGMEM= "バルブ5の設定";
 const char VLVNAME6[] PROGMEM= "バルブ6の設定";
 const char VLVNAME7[] PROGMEM= "バルブ7の設定";
 const char VLVNAME8[] PROGMEM= "バルブ8の設定";
-const char NOTE1[] PROGMEM= "V1の設定";
+const char VLVNOTE1[] PROGMEM= "";
+const char VLVNOTE2[] PROGMEM= "";
+const char VLVNOTE3[] PROGMEM= "";
+const char VLVNOTE4[] PROGMEM= "";
+const char VLVNOTE5[] PROGMEM= "";
+const char VLVNOTE6[] PROGMEM= "";
+const char VLVNOTE7[] PROGMEM= "";
+const char VLVNOTE8[] PROGMEM= "";
 const char UECSOFF[] PROGMEM= "手動CLOSE";
 const char UECSON[] PROGMEM= "手動OPEN";
 const char UECSAUTO[] PROGMEM= "自動";
@@ -105,8 +112,7 @@ signed long setONOFFAUTO8;
 
 //●表示素材の定義(3)数値入力
 //UECSINPUTDATA
-const char NAME2[] PROGMEM= "V1作動温度の設定";
-const char UNIT2[] PROGMEM= "℃";
+const char VCTNAME1[] PROGMEM= "V1作動温度の設定";
 const char NOTE2[] PROGMEM= "数値入力モード";
 
 //入力された数値を受け取る変数
