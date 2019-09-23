@@ -20,6 +20,8 @@
 //IPアドレスリセット用ジャンパーピン設定
 /////////////////////////////////////
 
+const byte U_DhcpPin = 2;
+const byte U_DhcpPin_Sense=HIGH;
 const byte U_InitPin = 3;
 const byte U_InitPin_Sense=LOW;
 
@@ -39,7 +41,7 @@ UECSOriginalAttribute U_orgAttribute;
 //////////////////////////////////
 #define DECIMAL_DIGIT	1 //小数桁数
 
-const int U_HtmlLine = 24; //Total number of HTML table rows.
+const int U_HtmlLine = 34; //Total number of HTML table rows.
 
 // 各種センサの値
 // センサの値は設定しないので UECSSHOWDATAで表示する。
@@ -112,10 +114,43 @@ signed long co2val;
 const char CO2TEMP_NAME[] PROGMEM = "CO2温度";
 const char CO2HUMI_NAME[] PROGMEM = "CO2湿度";
 const char CO2HUMI_UNIT[] PROGMEM = "%RH";
-singed long co2temp;
+signed long co2temp;
 signed long co2humi;
 
 
+//バルブの状態表示
+//UECSSHOWSTRING
+const char VLVSTSNAME0[] PROGMEM= "V1の状態";
+const char VLVSTSNAME1[] PROGMEM= "V2の状態";
+const char VLVSTSNAME2[] PROGMEM= "V3の状態";
+const char VLVSTSNAME3[] PROGMEM= "V4の状態";
+const char VLVSTSNAME4[] PROGMEM= "V5の状態";
+const char VLVSTSNAME5[] PROGMEM= "V6の状態";
+const char VLVSTSNAME6[] PROGMEM= "V7の状態";
+const char VLVSTSNAME7[] PROGMEM= "V8の状態";
+const char VLVSTSNOTE0[] PROGMEM= "";
+const char VLVSTSNOTE1[] PROGMEM= "";
+const char VLVSTSNOTE2[] PROGMEM= "";
+const char VLVSTSNOTE3[] PROGMEM= "";
+const char VLVSTSNOTE4[] PROGMEM= "";
+const char VLVSTSNOTE5[] PROGMEM= "";
+const char VLVSTSNOTE6[] PROGMEM= "";
+const char VLVSTSNOTE7[] PROGMEM= "";
+const char VLVSTS_CLOSE[] PROGMEM= "CLOSE";
+const char VLVSTS_OPEN[] PROGMEM= "OPEN";
+const char VLVSTS_UNKN[] PROGMEM= "UNKNOWN";
+//
+// 0: CLOSE
+// 1: OPEN
+// 2: UNKNOWN
+//
+const char *StrVLVSTS[3]={
+  VLVSTS_CLOSE,
+  VLVSTS_OPEN,
+  VLVSTS_UNKN
+};
+signed long VLVStatus[8];
+//signed long showValueStatus2;
 
 
 //バルブの設定内容(強制OPEN/CLOSE,自動)
@@ -186,22 +221,10 @@ const char *StrMOTOSW[3] = {
   MOTO_STOP
 };
 
-signed log setMOTO_ON_OFF_AUTO[2];
-signed log statusMOTO_ON_OFF_AUTO[2];
+signed long setMOTO_ON_OFF_AUTO[2];
+signed long statusMOTO_ON_OFF_AUTO[2];
 
 
-//●表示素材の定義(4)文字表示
-//UECSSHOWSTRING
-const char NAME3[] PROGMEM= "V1の状態";
-const char NOTE3[] PROGMEM= "";
-const char SHOWSTRING_OFF[] PROGMEM= "CLOSE";
-const char SHOWSTRING_ON [] PROGMEM= "OPEN";
-const char *stringSHOW[2]={
-  SHOWSTRING_OFF,
-  SHOWSTRING_ON,
-};
-signed long showValueStatus[8];
-//signed long showValueStatus2;
 
 //●ダミー素材の定義
 //dummy value
@@ -211,30 +234,41 @@ const char** DUMMY = NULL;
 //表示素材の登録
 struct UECSUserHtml U_html[U_HtmlLine]={
   //{名前,入出力形式	,単位 ,詳細説明,選択肢文字列	,選択肢数,値	,最小値,最大値,小数桁数}
-  {T1TEMP1, UECSSHOWDATA, TempUNIT, T1NOTE1, DUMMY, 0,&(showValueTemp1)	, 0, 0, DECIMAL_DIGIT},
-  {T1TEMP2, UECSSHOWDATA, TempUNIT, T1NOTE2, DUMMY, 0,&(showValueTemp2)	, 0, 0, DECIMAL_DIGIT},
-  {T1TEMP3, UECSSHOWDATA, TempUNIT, T1NOTE3, DUMMY, 0,&(showValueTemp3)	, 0, 0, DECIMAL_DIGIT},
-  {T1TEMP4, UECSSHOWDATA, TempUNIT, T1NOTE4, DUMMY, 0,&(showValueTemp4)	, 0, 0, DECIMAL_DIGIT},
-  {T1TEMP5, UECSSHOWDATA, TempUNIT, T1NOTE5, DUMMY, 0,&(showValueTemp5)	, 0, 0, DECIMAL_DIGIT},
-  {T1TEMP6, UECSSHOWDATA, TempUNIT, T1NOTE6, DUMMY, 0,&(showValueTemp6)	, 0, 0, DECIMAL_DIGIT},
-  {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(showValueTemp7)	, 0, 0, DECIMAL_DIGIT},
-  {T1TEMP8, UECSSHOWDATA, TempUNIT, T1NOTE8, DUMMY, 0,&(showValueTemp8)	, 0, 0, DECIMAL_DIGIT},
-  {VLVNAME1,UECSSELECTDATA,NONES,VLVNOTE1, stringSELECT,3, &(setONOFFAUTO1), 0, 0, 0},
-  {VCTNAME1,UECSINPUTDATA, TempUNIT,VCTNOTE1,DUMMY, 0,&(setONTempFromWeb1), 100, 1000, DECIMAL_DIGIT},
-  {VLVNAME2,UECSSELECTDATA,NONES,VLVNOTE2, stringSELECT,3, &(setONOFFAUTO2), 0, 0, 0},
-  {VCTNAME2,UECSINPUTDATA, TempUNIT,VCTNOTE2,DUMMY, 0,&(setONTempFromWeb2), 100, 1000, DECIMAL_DIGIT},
-  {VLVNAME3,UECSSELECTDATA,NONES,VLVNOTE3, stringSELECT,3, &(setONOFFAUTO3), 0, 0, 0},
-  {VCTNAME3,UECSINPUTDATA, TempUNIT,VCTNOTE3,DUMMY, 0,&(setONTempFromWeb3), 100, 1000, DECIMAL_DIGIT},
-  {VLVNAME4,UECSSELECTDATA,NONES,VLVNOTE4, stringSELECT,3, &(setONOFFAUTO4), 0, 0, 0},
-  {VCTNAME4,UECSINPUTDATA, TempUNIT,VCTNOTE4,DUMMY, 0,&(setONTempFromWeb4), 100, 1000, DECIMAL_DIGIT},
-  {VLVNAME5,UECSSELECTDATA,NONES,VLVNOTE5, stringSELECT,3, &(setONOFFAUTO5), 0, 0, 0},
-  {VCTNAME5,UECSINPUTDATA, TempUNIT,VCTNOTE5,DUMMY, 0,&(setONTempFromWeb5), 100, 1000, DECIMAL_DIGIT},
-  {VLVNAME6,UECSSELECTDATA,NONES,VLVNOTE6, stringSELECT,3, &(setONOFFAUTO6), 0, 0, 0},
-  {VCTNAME6,UECSINPUTDATA, TempUNIT,VCTNOTE6,DUMMY, 0,&(setONTempFromWeb6), 100, 1000, DECIMAL_DIGIT},
-  {VLVNAME7,UECSSELECTDATA,NONES,VLVNOTE7, stringSELECT,3, &(setONOFFAUTO7), 0, 0, 0},
-  {VCTNAME7,UECSINPUTDATA, TempUNIT,VCTNOTE7,DUMMY, 0,&(setONTempFromWeb7), 100, 1000, DECIMAL_DIGIT},
-  {VLVNAME8,UECSSELECTDATA,NONES,VLVNOTE8, stringSELECT,3, &(setONOFFAUTO8), 0, 0, 0},
-  {VCTNAME8,UECSINPUTDATA, TempUNIT,VCTNOTE8,DUMMY, 0,&(setONTempFromWeb8), 100, 1000, DECIMAL_DIGIT},
+  {MOTONAME0, UECSSHOWSTRING, NONES, VLVSTSNOTE0,StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[0]),0,0,0},
+  {MOTONAME1, UECSSHOWSTRING, NONES, VLVSTSNOTE1,StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[1]),0,0,0},
+  {T1TEMP0, UECSSHOWDATA, TempUNIT, T1NOTE0, DUMMY, 0,&(t1tValue[0])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP1, UECSSHOWDATA, TempUNIT, T1NOTE1, DUMMY, 0,&(t1tValue[1])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP2, UECSSHOWDATA, TempUNIT, T1NOTE2, DUMMY, 0,&(t1tValue[2])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP3, UECSSHOWDATA, TempUNIT, T1NOTE3, DUMMY, 0,&(t1tValue[3])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP4, UECSSHOWDATA, TempUNIT, T1NOTE4, DUMMY, 0,&(t1tValue[4])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP5, UECSSHOWDATA, TempUNIT, T1NOTE5, DUMMY, 0,&(t1tValue[5])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP6, UECSSHOWDATA, TempUNIT, T1NOTE6, DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {VLVSTSNAME0, UECSSHOWSTRING, NONES, VLVSTSNOTE0,StrVLVSTS,3,&(VLVStatus[0]),0,0,0},
+  {VLVSTSNAME1, UECSSHOWSTRING, NONES, VLVSTSNOTE1,StrVLVSTS,3,&(VLVStatus[1]),0,0,0},
+  {VLVSTSNAME2, UECSSHOWSTRING, NONES, VLVSTSNOTE2,StrVLVSTS,3,&(VLVStatus[2]),0,0,0},
+  {VLVSTSNAME3, UECSSHOWSTRING, NONES, VLVSTSNOTE3,StrVLVSTS,3,&(VLVStatus[3]),0,0,0},
+  {VLVSTSNAME4, UECSSHOWSTRING, NONES, VLVSTSNOTE4,StrVLVSTS,3,&(VLVStatus[4]),0,0,0},
+  {VLVSTSNAME5, UECSSHOWSTRING, NONES, VLVSTSNOTE5,StrVLVSTS,3,&(VLVStatus[5]),0,0,0},
+  {VLVSTSNAME6, UECSSHOWSTRING, NONES, VLVSTSNOTE6,StrVLVSTS,3,&(VLVStatus[6]),0,0,0},
+  {VLVSTSNAME7, UECSSHOWSTRING, NONES, VLVSTSNOTE7,StrVLVSTS,3,&(VLVStatus[7]),0,0,0},
+  
+  {VLVNAME0,UECSSELECTDATA,NONES,VLVNOTE0, StrVLV_SELECT,3, &(set_VLV_SELECT[0]), 0, 0, 0},
+  {VCTNAME0,UECSINPUTDATA, TempUNIT,VCTNOTE0,DUMMY, 0,&(setVCTval[0]), 100, 1000, T1T_DECIMAL_DIGIT},
+  {VLVNAME1,UECSSELECTDATA,NONES,VLVNOTE1, StrVLV_SELECT,3, &(set_VLV_SELECT[1]), 0, 0, 0},
+  {VCTNAME1,UECSINPUTDATA, TempUNIT,VCTNOTE1,DUMMY, 0,&(setVCTval[1]), 100, 1000, T1T_DECIMAL_DIGIT},
+  {VLVNAME2,UECSSELECTDATA,NONES,VLVNOTE2, StrVLV_SELECT,3, &(set_VLV_SELECT[2]), 0, 0, 0},
+  {VCTNAME2,UECSINPUTDATA, TempUNIT,VCTNOTE2,DUMMY, 0,&(setVCTval[2]), 100, 1000, T1T_DECIMAL_DIGIT},
+  {VLVNAME3,UECSSELECTDATA,NONES,VLVNOTE3, StrVLV_SELECT,3, &(set_VLV_SELECT[3]), 0, 0, 0},
+  {VCTNAME3,UECSINPUTDATA, TempUNIT,VCTNOTE3,DUMMY, 0,&(setVCTval[3]), 100, 1000, T1T_DECIMAL_DIGIT},
+  {VLVNAME4,UECSSELECTDATA,NONES,VLVNOTE4, StrVLV_SELECT,3, &(set_VLV_SELECT[4]), 0, 0, 0},
+  {VCTNAME4,UECSINPUTDATA, TempUNIT,VCTNOTE4,DUMMY, 0,&(setVCTval[4]), 100, 1000, T1T_DECIMAL_DIGIT},
+  {VLVNAME5,UECSSELECTDATA,NONES,VLVNOTE5, StrVLV_SELECT,3, &(set_VLV_SELECT[5]), 0, 0, 0},
+  {VCTNAME5,UECSINPUTDATA, TempUNIT,VCTNOTE5,DUMMY, 0,&(setVCTval[5]), 100, 1000, T1T_DECIMAL_DIGIT},
+  {VLVNAME6,UECSSELECTDATA,NONES,VLVNOTE6, StrVLV_SELECT,3, &(set_VLV_SELECT[6]), 0, 0, 0},
+  {VCTNAME6,UECSINPUTDATA, TempUNIT,VCTNOTE6,DUMMY, 0,&(setVCTval[6]), 100, 1000, T1T_DECIMAL_DIGIT},
+  {VLVNAME7,UECSSELECTDATA,NONES,VLVNOTE7, StrVLV_SELECT,3, &(set_VLV_SELECT[7]), 0, 0, 0},
+  {VCTNAME7,UECSINPUTDATA, TempUNIT,VCTNOTE7,DUMMY, 0,&(setVCTval[7]), 100, 1000, T1T_DECIMAL_DIGIT},
   //  {VLVNAME1, UECSSELECTDATA,NONES, &(showValueStatus1), stringSELECT,3,
   //  {VLVNAME1,UECSSELECTDATA,&(setONTempFromWeb1),&(showValueStatus1),
   //  {NAME0,UECSSHOWDATA	,UNIT0,NOTE0, DUMMY	, 0,  &(showValueTemp)	, 0, 0, DECIMAL_DIGIT},
@@ -242,7 +276,6 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   //  {NAME2,UECSINPUTDATA	,UNIT2,NOTE2, DUMMY	, 0,  &(setONTempFromWeb), 100, 1000, DECIMAL_DIGIT},
   //  {NAME3,UECSSHOWSTRING	,NONES,NOTE3, stringSHOW, 2,  &(showValueStatus), 0, 0, 0},
 };
-
 
 
 //////////////////////////////////
@@ -343,14 +376,14 @@ void UserInit(){
 
 
 void OnWebFormRecieved() {
-  U_ccmList[CCMID_OPETemp1].value=setONTempFromWeb1;
-  U_ccmList[CCMID_OPETemp2].value=setONTempFromWeb2;
-  U_ccmList[CCMID_OPETemp3].value=setONTempFromWeb3;
-  U_ccmList[CCMID_OPETemp4].value=setONTempFromWeb4;
-  U_ccmList[CCMID_OPETemp5].value=setONTempFromWeb5;
-  U_ccmList[CCMID_OPETemp6].value=setONTempFromWeb6;
-  U_ccmList[CCMID_OPETemp7].value=setONTempFromWeb7;
-  U_ccmList[CCMID_OPETemp8].value=setONTempFromWeb8;
+  U_ccmList[CCMID_OPETemp1].value=setVCTval[0];
+  U_ccmList[CCMID_OPETemp2].value=setVCTval[1];
+  U_ccmList[CCMID_OPETemp3].value=setVCTval[2];
+  U_ccmList[CCMID_OPETemp4].value=setVCTval[3];
+  U_ccmList[CCMID_OPETemp5].value=setVCTval[4];
+  U_ccmList[CCMID_OPETemp6].value=setVCTval[5];
+  U_ccmList[CCMID_OPETemp7].value=setVCTval[6];
+  U_ccmList[CCMID_OPETemp8].value=setVCTval[7];
   ChangeThermostat();
  
 }
@@ -371,28 +404,37 @@ void loop(){
 }
 
 void setup(){
+  extern byte megaEtherSS;
+  int i;
+  megaEtherSS = 53; // SS is pin 53
   UECSsetup();
   pinMode(A0,INPUT);
   pinMode(BLOWER,OUTPUT);
   digitalWrite(BLOWER,HIGH);
-  U_ccmList[CCMID_OPETemp1].value=setONTempFromWeb1;
+  U_ccmList[CCMID_OPETemp1].value=setVCTval[0];
   U_ccmList[CCMID_TCTemp1].validity = true;
+  for (i=0;i<8;i++) {
+    VLVStatus[i] = 1;
+  }
+  for (i=0;i<2;i++) {
+    statusMOTO_ON_OFF_AUTO[i] = 0;
+  }
 }
 
 //---------------------------------------------------------
 //サーモスタット動作を変化させる関数
 //---------------------------------------------------------
 void ChangeThermostat(){
-  showValueTemp1 = U_ccmList[CCMID_TCTemp1].value;
-  showValueTemp2 = U_ccmList[CCMID_TCTemp2].value;
-  showValueTemp3 = U_ccmList[CCMID_TCTemp3].value;
-  showValueTemp4 = U_ccmList[CCMID_TCTemp4].value;
-  showValueTemp5 = U_ccmList[CCMID_TCTemp5].value;
-  showValueTemp6 = U_ccmList[CCMID_TCTemp6].value;
-  showValueTemp7 = U_ccmList[CCMID_TCTemp7].value;
-  showValueTemp8 = U_ccmList[CCMID_TCTemp8].value;
+  t1tValue[0] = U_ccmList[CCMID_TCTemp1].value;
+  t1tValue[1] = U_ccmList[CCMID_TCTemp2].value;
+  t1tValue[2] = U_ccmList[CCMID_TCTemp3].value;
+  t1tValue[3] = U_ccmList[CCMID_TCTemp4].value;
+  t1tValue[4] = U_ccmList[CCMID_TCTemp5].value;
+  t1tValue[5] = U_ccmList[CCMID_TCTemp6].value;
+  t1tValue[6] = U_ccmList[CCMID_TCTemp7].value;
+  t1tValue[7] = U_ccmList[CCMID_TCTemp8].value;
 
-  switch(setONOFFAUTO1) {
+  switch(set_VLV_SELECT[0]) {
   case 0:
     U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
@@ -409,7 +451,7 @@ void ChangeThermostat(){
     U_ccmList[CCMID_cnd].value=0;  //Auto OFF
     break;
   }
-  switch(setONOFFAUTO2) {
+  switch(set_VLV_SELECT[1]) {
   case 0:
     U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
@@ -426,7 +468,7 @@ void ChangeThermostat(){
     U_ccmList[CCMID_cnd].value=0;  //Auto OFF
     break;
   }
-  switch(setONOFFAUTO3) {
+  switch(set_VLV_SELECT[2]) {
   case 0:
     U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
@@ -443,7 +485,7 @@ void ChangeThermostat(){
     U_ccmList[CCMID_cnd].value=0;  //Auto OFF
     break;
   }
-  switch(setONOFFAUTO4) {
+  switch(set_VLV_SELECT[3]) {
   case 0:
     U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
@@ -460,7 +502,7 @@ void ChangeThermostat(){
     U_ccmList[CCMID_cnd].value=0;  //Auto OFF
     break;
   }
-  switch(setONOFFAUTO5) {
+  switch(set_VLV_SELECT[4]) {
   case 0:
     U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
@@ -477,7 +519,7 @@ void ChangeThermostat(){
     U_ccmList[CCMID_cnd].value=0;  //Auto OFF
     break;
   }
-  switch(setONOFFAUTO6) {
+  switch(set_VLV_SELECT[5]) {
   case 0:
     U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
@@ -494,7 +536,7 @@ void ChangeThermostat(){
     U_ccmList[CCMID_cnd].value=0;  //Auto OFF
     break;
   }
-  switch(setONOFFAUTO7) {
+  switch(set_VLV_SELECT[6]) {
   case 0:
     U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
@@ -511,7 +553,7 @@ void ChangeThermostat(){
     U_ccmList[CCMID_cnd].value=0;  //Auto OFF
     break;
   }
-  switch(setONOFFAUTO8) {
+  switch(set_VLV_SELECT[7]) {
   case 0:
     U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
@@ -539,8 +581,8 @@ void ChangeThermostat(){
   // } else {
   //   U_ccmList[CCMID_cnd].value=0;  //OFF
   // }
-  showValueStatus1 = U_ccmList[CCMID_cnd].value;
-  if (showValueStatus1==1) {
+  VLVStatus[0] = U_ccmList[CCMID_cnd].value;
+  if (VLVStatus[0]==1) {
     digitalWrite(BLOWER,LOW);
   } else {
     digitalWrite(BLOWER,HIGH);
