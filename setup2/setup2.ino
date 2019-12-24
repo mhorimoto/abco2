@@ -1,15 +1,20 @@
 #include <EEPROM.h>
 
-// Set MAC Address at EEPROM 4090-4095
+// Set MAC Address at EEPROM 4090-4095 for MEGA
+//                    EEPROM 1018-1023 for UNO
+
+#define MEGA_PTR  4090
+#define UNO_PTR   1018
+
 
 void setup() {
-  EEPROM.write(4090,0x02);
-  EEPROM.write(4091,0xA2);
-  EEPROM.write(4092,0x73);
-  EEPROM.write(4093,0xFF);
-  EEPROM.write(4094,0x00);
-  EEPROM.write(4095,0x01);
-  EEPROM.write(4,0xFF);
+  int startptr = UNO_PTR;
+  EEPROM.write(startptr,0x02);
+  EEPROM.write(startptr+1,0xA2);
+  EEPROM.write(startptr+2,0x73);
+  EEPROM.write(startptr+3,0xFF);
+  EEPROM.write(startptr+4,0x00);
+  EEPROM.write(startptr+5,0x03);
 }
 
 void loop() {

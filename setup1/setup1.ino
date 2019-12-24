@@ -3,8 +3,8 @@
 //
 
 /*
-D2	I 緊急停止ボタン(赤)	Interrupt available
-D3	I セレクタ決定ボタン(緑)	Interrupt available
+D2	I 緊急停止ボタン(赤)	Interrupt available INT.0
+D3	I セレクタ決定ボタン(緑)	Interrupt available INT.1
 D4	I VLV1 OLS	ボールバルブ1全開
 D5	I VLV1 SLS	ボールバルブ1全閉
 D6	I VLV2 OLS	ボールバルブ2全開
@@ -19,16 +19,16 @@ TX3	I VLV6 OLS	ボールバルブ6全開
 RX3	I VLV6 SLS	ボールバルブ6全閉
 TX2	I VLV7 OLS	ボールバルブ7全開
 RX2	I VLV7 SLS	ボールバルブ7全閉
-TX1	I セレクタキャンセルボタン(黄)	Interrupt available
-RX1		                        Interrupt available
-SDA	B LCD,T熱電対,K33LP,K33ICB	"I2CインタフェースInterrupt available"
-SCL	B	
+TX1	I セレクタキャンセルボタン(黄)	Interrupt available INT.5
+RX1	I アラーム未着火など             Interrupt available INT.4
+SDA	B LCD,T熱電対,K33LP,K33ICB	I2CインタフェースInterrupt available INT.3
+SCL	B LCD,T熱電対,K33LP,K33ICB	I2CインタフェースInterrupt available INT.2
 D22	O RELAY1-ブロアモーター開閉器	
 D23	O RELAY2-ポンプFP-15S	
 D24	O RELAY3-予備	
 D25	I UECS DHCP MODE SWITCH	HIGHでDHCPモード
 D26	I UECS SAFE MODE SWITCH	LOWでセーフモード
-D27	X 予約	
+D27	I バーナーON/OFF
 D28	X 予約	
 D29	X 予約	
 D30	O ボールバルブ1-A	
