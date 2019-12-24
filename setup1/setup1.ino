@@ -55,30 +55,260 @@ D50	X W5500-MISO	LANインタフェース
 D51	X W5500-MOSI	
 D52	X W5500-SCK	
 D53	X W5500-SS	
-RESET	X W5500-RESET	
+RESET	X W5500-RESET
+
+A00		
+A01		
+A02	セレクタ入力	10kΩ VR
+A03		
+A04		
+A05		
+A06		
+A07		
+A08		
+A09		
+A10		
+A11		
+A12		
+A13		
+A14		
+A15			
 */
 
+#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+#include <RtcDS3231.h>
+#include <Ethernet2.h>
+#include <EEPROM.h>
 
+LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+RtcDS3231<TwoWire> Rtc(Wire);
 
+int a02val = 0;
+int nmval  = 0;
+int prev_menu = 0;
+char lcdtext[17];
+char lcdtitle[17];
+byte MACAddress[6];
+
+volatile int menu_state = 0; // 0: MAIN MENU
+                             // 1: OUTPUT TEST
+                             // 2: INPUT TEST
+                             // 3: TEMPERATURE
+                             // 4: CO2 TEST
+                             // 5: RTC TEST
+const char *VERSION = "006";
 
 void setup() {
   int i;
-  Serial.begin(115200);
+  // Setup INPUT Pins
+  pinMode(2,INPUT_PULLUP);
+  pinMode(3,INPUT_PULLUP);
+  pinMode(18,INPUT_PULLUP);
+  // Setup OUTPUT Pins
   for(i=22;i<=24;i++) {
     pinMode(i,OUTPUT);
     digitalWrite(i,LOW);
-    Serial.print(i);
-    Serial.println(" set LOW.");
   }
   for(i=30;i<=43;i++) {
     pinMode(i,OUTPUT);
     digitalWrite(i,LOW);
-    Serial.print(i);
-    Serial.println(" set LOW.");
   }
-  Serial.println("ALL DONE");
+  // Ethernet Initilize
+  Get_MACAddress();
+  //  Serial.end();
+  attachInterrupt(0, emgstop, FALLING);
+  attachInterrupt(1, okgo, FALLING);
+  //  attachInterrupt(2, backret, FALLING);
+  sprintf(lcdtitle,"MAIN MENU %6s",VERSION);
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0,0);
+  lcd.print(lcdtitle);
+}
+
+
+void loop() {
+  char *tn;
+  int  d18;
+
+  a02val = analogRead(2);
+  nmval = (a02val/100)+1;
+  d18 = digitalRead(18);
+  if (d18==0) {
+    menu_state = 0;
+    prev_menu = 9;
+  }
+  switch(menu_state) {
+  case 0: // MAIN MENU
+    if (prev_menu!=menu_state) {
+      lcd.setCursor(0,0);
+      lcd.print(lcdtitle);
+    }
+    switch(nmval) {
+    case 1:
+      tn = "OUTPUT TEST";
+      break;
+    case 2:
+      tn = "INPUT TEST ";
+      break;
+    case 3:
+      tn = "TEMPERATURE";
+      break;
+    case 4:
+      tn = "CO2 TEST   ";
+      break;
+    case 5:
+      tn = "RTC UTIL   ";
+      break;
+    case 6:
+      tn = "NET UTIL   ";
+      break;
+    default:
+      tn = "NO DEFINED ";
+    }
+    sprintf(lcdtext,"%4d %s",a02val,tn);
+    lcd.setCursor(0,1);
+    lcd.print(lcdtext);
+    break;
+  case 1: // OUTPUT TEST
+    if (prev_menu!=menu_state) {
+      lcd.setCursor(0,0);
+      lcd.print("OUTPUT MENU     ");
+    }
+    prev_menu = 1;
+    break;
+  case 2:
+    break;
+  case 3:
+    break;
+  case 4:
+    break;
+  case 5: // RTC UTIL
+    if (prev_menu!=menu_state) {
+      lcd.setCursor(0,0);
+      lcd.print("RTC UTIL        ");
+    }
+    prev_menu = 5;
+    rtc_util();
+    break;
+  case 6: // NETWORK UTIL
+    if (prev_menu!=menu_state) {
+      lcd.setCursor(0,0);
+      lcd.print("NET UTIL        ");
+    }
+    prev_menu = 6;
+    net_util();
+    break;
+  }
+}
+
+
+void test_output() {
+  int val ;
+  
+}
+
+void emgstop(void) {
+  Serial.begin(115200);
+  Serial.println("EMG STOP");
   Serial.end();
 }
 
-void loop() {
+void okgo(void) {
+  Serial.begin(115200);
+  Serial.println("OKGO");
+  Serial.end();
+  switch(menu_state) {
+  case 0:
+    menu_state = nmval;
+    break;
+  }
+}
+
+void backret(void) {
+  Serial.begin(115200);
+  Serial.println("BACK RETURN");
+  Serial.end();
+  menu_state = 0;
+}
+
+void rtc_util(void) {
+  char timeDate[17];
+  int  sec;
+  RtcDateTime now = Rtc.GetDateTime();
+  sec = now.Second();
+  switch(sec) {
+  case 0:
+  case 1:
+  case 2:
+  case 15:
+  case 16:
+  case 17:
+  case 30:
+  case 31:
+  case 32:
+  case 45:
+  case 46:
+  case 47:
+    sprintf(timeDate,"%4d/%02d/%02d",now.Year(),now.Month(),now.Day());
+    break;
+  default:
+    sprintf(timeDate,"%02d:%02d:%02d  ",now.Hour(),now.Minute(),now.Second());
+    break;
+  }
+  lcd.setCursor(0,1);
+  lcd.print(timeDate);
+}
+
+void net_util(void) {
+  int i,aval,smenu;
+  byte maca[6];
+  char lcdtext[17];
+  aval = analogRead(2);
+  smenu = (aval/100)+1;
+  switch(smenu) {
+  case 1: // IP Address
+    lcd.setCursor(0,0);
+    lcd.print("IP Address      ");
+    lcd.setCursor(0,1);
+    lcd.print("192.168.31.000  ");
+    break;
+  case 2: // Netmask
+    lcd.setCursor(0,0);
+    lcd.print("Netmask         ");
+    lcd.setCursor(0,1);
+    lcd.print("255.255.255.0   ");
+    break;
+  case 3: // Gateway
+    lcd.setCursor(0,0);
+    lcd.print("Gateway         ");
+    lcd.setCursor(0,1);
+    lcd.print("192.168.31.254  ");
+    break;
+  case 4: // MAC Address
+    Reset_lcdtext();
+    sprintf(lcdtext,"%02X%02X.%02X%02X.%02X%02X",
+	    MACAddress[0],MACAddress[1],MACAddress[2],
+	    MACAddress[3],MACAddress[4],MACAddress[5]);
+    lcd.setCursor(0,0);
+    lcd.print("MAC Address     ");
+    lcd.setCursor(0,1);
+    lcd.print(lcdtext);
+    break;
+  }
+}
+
+void Reset_lcdtext(void) {
+  int i;
+  for(i=0;i<17;i++) {
+    lcdtext[i] = (char)NULL;
+  }
+}
+
+void Get_MACAddress(void) {
+  int i;
+  for(i=0;i<6;i++) {
+    MACAddress[i]=EEPROM.read(4090+i);
+  }
 }
