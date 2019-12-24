@@ -1,0 +1,17 @@
+#define  D_BLOWER      22
+#define  D_PUMP        23
+#define  D_SPARE       24
+#define  D_VLV1_NORM   30
+#define  D_VLV1_REV    31
+#define  D_VLV1_OLS     4
+#define  D_VLV1_SLS     5
+#define  VLV1_UNKNOWN 300
+#define  VLV1_OPEN    301
+#define  VLV1_CLOSE   302
+#define  D_VLV2_NORM   32
+#define  D_VLV2_REV    33
+#define  D_VLV2_OLS     6
+#define  D_VLV2_SLS     7
+#define  VLV2_UNKNOWN 320
+#define  VLV2_OPEN    321
+#define  VLV2_CLOSE   322

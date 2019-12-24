@@ -80,24 +80,27 @@ A15
 #include <RtcDS3231.h>
 #include <Ethernet2.h>
 #include <EEPROM.h>
+#include "setup1.h"
 
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 RtcDS3231<TwoWire> Rtc(Wire);
 
 int a02val = 0;
 int nmval  = 0;
-int prev_menu = 0;
 char lcdtext[17];
 char lcdtitle[17];
 byte MACAddress[6];
 
+volatile int prev_menu = 0;
 volatile int menu_state = 0; // 0: MAIN MENU
                              // 1: OUTPUT TEST
                              // 2: INPUT TEST
                              // 3: TEMPERATURE
                              // 4: CO2 TEST
                              // 5: RTC TEST
-const char *VERSION = "006";
+volatile int output_test_toggle; // 0:OFF, 1:ON
+
+const char *VERSION = "00D";
 
 void setup() {
   int i;
@@ -119,7 +122,7 @@ void setup() {
   //  Serial.end();
   attachInterrupt(0, emgstop, FALLING);
   attachInterrupt(1, okgo, FALLING);
-  //  attachInterrupt(2, backret, FALLING);
+  attachInterrupt(5, backret, FALLING);
   sprintf(lcdtitle,"MAIN MENU %6s",VERSION);
   lcd.init();
   lcd.backlight();
@@ -176,6 +179,7 @@ void loop() {
       lcd.setCursor(0,0);
       lcd.print("OUTPUT MENU     ");
     }
+    test_output();
     prev_menu = 1;
     break;
   case 2:
@@ -204,10 +208,36 @@ void loop() {
 }
 
 
-void test_output() {
-  int val ;
-  
-}
+// void test_output() {
+//   int d;
+//   int i,aval,smenu;
+//   byte maca[6];
+//   char lcdtext[17];
+//   aval = analogRead(2);
+//   smenu = (aval/100)+1;
+//   switch(smenu) {
+//   case 1: // BLOWER TEST
+//     sprintf(lcdtext,"%16s","BLOWER TEST");
+//     lcd.setCursor(0,0);
+//     lcd.print(lcdtext);
+//     d = digitalRead(D_BLOWER);
+//     if (d==HIGH) {
+//       sprintf(lcdtext,"%16s","BLOWER IS ON");
+//       if (output_test_toggle==1) {
+// 	digitalWrite(D_BLOWER,LOW);
+// 	output_test_toggle = 0;
+//       }
+//     } else {
+//       sprintf(lcdtext,"%16s","BLOWER IS OFF");
+//       if (output_test_toggle==1) {
+// 	digitalWrite(D_BLOWER,HIGH);
+// 	output_test_toggle = 0;
+//       }
+//     }
+//     lcd.setCursor(0,1);
+//     lcd.print(lcdtext);
+//   }
+// }
 
 void emgstop(void) {
   Serial.begin(115200);
@@ -223,6 +253,9 @@ void okgo(void) {
   case 0:
     menu_state = nmval;
     break;
+  case 1: // IN OUTPUT_TEST
+    output_test_toggle = 1;
+    break;
   }
 }
 
@@ -231,6 +264,7 @@ void backret(void) {
   Serial.println("BACK RETURN");
   Serial.end();
   menu_state = 0;
+  prev_menu = 9;
 }
 
 void rtc_util(void) {
