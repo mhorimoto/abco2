@@ -77,13 +77,23 @@ A15
 
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
+#include <K30_I2C.h>
 #include <RtcDS3231.h>
 #include <Ethernet2.h>
 #include <EEPROM.h>
+#include <AT24CX.h>
+#include <Adafruit_I2CDevice.h>
+#include <Adafruit_I2CRegister.h>
+#include <Adafruit_MCP9600.h>
 #include "setup1.h"
 
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 RtcDS3231<TwoWire> Rtc(Wire);
+K30_I2C k33lp  = K30_I2C(0x6c);
+K30_I2C k33icb = K30_I2C(0x6a);
+AT24CX  atmem(7,32);
+Adafruit_MCP9600 mcp[8];
+int mcp96_addr[]={0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67};
 
 int a02val = 0;
 int nmval  = 0;
@@ -91,6 +101,7 @@ char lcdtext[17];
 char lcdtitle[17];
 byte MACAddress[6];
 
+volatile int f_reset = 0;
 volatile int prev_menu = 0;
 volatile int menu_state = 0; // 0: MAIN MENU
                              // 1: OUTPUT TEST
@@ -100,7 +111,7 @@ volatile int menu_state = 0; // 0: MAIN MENU
                              // 5: RTC TEST
 volatile int output_test_toggle; // 0:OFF, 1:ON
 
-const char *VERSION = "00D";
+const char *VERSION = "01E";
 
 void setup() {
   int i;
@@ -108,6 +119,12 @@ void setup() {
   pinMode(2,INPUT_PULLUP);
   pinMode(3,INPUT_PULLUP);
   pinMode(18,INPUT_PULLUP);
+  pinMode(BURNER,INPUT_PULLUP);
+  pinMode(ALRM_MISSFIRE,INPUT_PULLUP);
+  pinMode(WLVL1,INPUT);
+  pinMode(WLVL2,INPUT);
+  pinMode(PRSLVL1,INPUT);
+  pinMode(PRSLVL2,INPUT);
   // Setup OUTPUT Pins
   for(i=22;i<=24;i++) {
     pinMode(i,OUTPUT);
@@ -119,7 +136,9 @@ void setup() {
   }
   // Ethernet Initilize
   Get_MACAddress();
-  //  Serial.end();
+  net_init();
+  //  T-Couple Thermal sensor initilized
+  init_mcp9600();
   attachInterrupt(0, emgstop, FALLING);
   attachInterrupt(1, okgo, FALLING);
   attachInterrupt(5, backret, FALLING);
@@ -137,11 +156,11 @@ void loop() {
 
   a02val = analogRead(2);
   nmval = (a02val/100)+1;
-  d18 = digitalRead(18);
-  if (d18==0) {
-    menu_state = 0;
-    prev_menu = 9;
-  }
+  //  d18 = digitalRead(18);
+  //  if (d18==0) {
+  //    menu_state = 0;
+  //    prev_menu = 9;
+  //  }
   switch(menu_state) {
   case 0: // MAIN MENU
     if (prev_menu!=menu_state) {
@@ -150,27 +169,30 @@ void loop() {
     }
     switch(nmval) {
     case 1:
-      tn = "OUTPUT TEST";
+      tn = "OUTPUT TEST     ";
       break;
     case 2:
-      tn = "INPUT TEST ";
+      tn = "INPUT TEST      ";
       break;
     case 3:
-      tn = "TEMPERATURE";
+      tn = "TEMPERATURE     ";
       break;
     case 4:
-      tn = "CO2 TEST   ";
+      tn = "CO2 K33 TEST    ";
       break;
     case 5:
-      tn = "RTC UTIL   ";
+      tn = "RTC UTIL        ";
       break;
     case 6:
-      tn = "NET UTIL   ";
+      tn = "NETWORK UTIL    ";
+      break;
+    case 11:
+      tn = "SYSTEM RESET    ";
       break;
     default:
-      tn = "NO DEFINED ";
+      tn = "NO DEFINED      ";
     }
-    sprintf(lcdtext,"%4d %s",a02val,tn);
+    sprintf(lcdtext,"%s",tn);
     lcd.setCursor(0,1);
     lcd.print(lcdtext);
     break;
@@ -183,10 +205,22 @@ void loop() {
     prev_menu = 1;
     break;
   case 2:
+    if (prev_menu!=menu_state) {
+      lcd.setCursor(0,0);
+      lcd.print("INPUT MENU      ");
+    }
+    test_input();
+    prev_menu = 2;
     break;
   case 3:
     break;
-  case 4:
+  case 4: // TEST CO2
+    if (prev_menu!=menu_state) {
+      lcd.setCursor(0,0);
+      lcd.print("CO2 K33 TEST    ");
+    }
+    prev_menu = 4;
+    test_co2();
     break;
   case 5: // RTC UTIL
     if (prev_menu!=menu_state) {
@@ -199,50 +233,30 @@ void loop() {
   case 6: // NETWORK UTIL
     if (prev_menu!=menu_state) {
       lcd.setCursor(0,0);
-      lcd.print("NET UTIL        ");
+      lcd.print("NETWORK UTIL    ");
     }
     prev_menu = 6;
     net_util();
     break;
+  case 11: // SYSTEM RESET
+    if (prev_menu!=menu_state) {
+      lcd.setCursor(0,0);
+      lcd.print("SYSTEM RESET    ");
+      lcd.setCursor(0,1);
+      lcd.print(" ARE YOU SURE?  ");
+    }
+    prev_menu = 11;
+    break;
   }
 }
-
-
-// void test_output() {
-//   int d;
-//   int i,aval,smenu;
-//   byte maca[6];
-//   char lcdtext[17];
-//   aval = analogRead(2);
-//   smenu = (aval/100)+1;
-//   switch(smenu) {
-//   case 1: // BLOWER TEST
-//     sprintf(lcdtext,"%16s","BLOWER TEST");
-//     lcd.setCursor(0,0);
-//     lcd.print(lcdtext);
-//     d = digitalRead(D_BLOWER);
-//     if (d==HIGH) {
-//       sprintf(lcdtext,"%16s","BLOWER IS ON");
-//       if (output_test_toggle==1) {
-// 	digitalWrite(D_BLOWER,LOW);
-// 	output_test_toggle = 0;
-//       }
-//     } else {
-//       sprintf(lcdtext,"%16s","BLOWER IS OFF");
-//       if (output_test_toggle==1) {
-// 	digitalWrite(D_BLOWER,HIGH);
-// 	output_test_toggle = 0;
-//       }
-//     }
-//     lcd.setCursor(0,1);
-//     lcd.print(lcdtext);
-//   }
-// }
 
 void emgstop(void) {
   Serial.begin(115200);
   Serial.println("EMG STOP");
   Serial.end();
+  if (f_reset==1) {
+    asm volatile(" jmp 0");
+  }    
 }
 
 void okgo(void) {
@@ -256,6 +270,9 @@ void okgo(void) {
   case 1: // IN OUTPUT_TEST
     output_test_toggle = 1;
     break;
+  case 11: // SYSTEM RESET
+    f_reset = 1;
+    break;
   }
 }
 
@@ -263,75 +280,16 @@ void backret(void) {
   Serial.begin(115200);
   Serial.println("BACK RETURN");
   Serial.end();
-  menu_state = 0;
-  prev_menu = 9;
-}
-
-void rtc_util(void) {
-  char timeDate[17];
-  int  sec;
-  RtcDateTime now = Rtc.GetDateTime();
-  sec = now.Second();
-  switch(sec) {
-  case 0:
+  switch(menu_state) {
   case 1:
-  case 2:
-  case 15:
-  case 16:
-  case 17:
-  case 30:
-  case 31:
-  case 32:
-  case 45:
-  case 46:
-  case 47:
-    sprintf(timeDate,"%4d/%02d/%02d",now.Year(),now.Month(),now.Day());
-    break;
-  default:
-    sprintf(timeDate,"%02d:%02d:%02d  ",now.Hour(),now.Minute(),now.Second());
+    test_output_all_reset();
     break;
   }
-  lcd.setCursor(0,1);
-  lcd.print(timeDate);
+  menu_state = 0;
+  prev_menu = 1026;
+  f_reset = 0;
 }
 
-void net_util(void) {
-  int i,aval,smenu;
-  byte maca[6];
-  char lcdtext[17];
-  aval = analogRead(2);
-  smenu = (aval/100)+1;
-  switch(smenu) {
-  case 1: // IP Address
-    lcd.setCursor(0,0);
-    lcd.print("IP Address      ");
-    lcd.setCursor(0,1);
-    lcd.print("192.168.31.000  ");
-    break;
-  case 2: // Netmask
-    lcd.setCursor(0,0);
-    lcd.print("Netmask         ");
-    lcd.setCursor(0,1);
-    lcd.print("255.255.255.0   ");
-    break;
-  case 3: // Gateway
-    lcd.setCursor(0,0);
-    lcd.print("Gateway         ");
-    lcd.setCursor(0,1);
-    lcd.print("192.168.31.254  ");
-    break;
-  case 4: // MAC Address
-    Reset_lcdtext();
-    sprintf(lcdtext,"%02X%02X.%02X%02X.%02X%02X",
-	    MACAddress[0],MACAddress[1],MACAddress[2],
-	    MACAddress[3],MACAddress[4],MACAddress[5]);
-    lcd.setCursor(0,0);
-    lcd.print("MAC Address     ");
-    lcd.setCursor(0,1);
-    lcd.print(lcdtext);
-    break;
-  }
-}
 
 void Reset_lcdtext(void) {
   int i;
@@ -345,4 +303,30 @@ void Get_MACAddress(void) {
   for(i=0;i<6;i++) {
     MACAddress[i]=EEPROM.read(4090+i);
   }
+}
+
+char* ConvertFloatChar(float value,char *szbuf){
+    int whl;
+    int frac;
+    bool Inverse = false; //符号
+
+    whl = (int)value;                //整数
+    frac = (int)((value-whl) * 10000) ; //小数
+
+    if(frac < 0){
+        frac *= -1;
+        Inverse = true;
+    }
+    if(whl < 0){
+        whl *= -1;
+        Inverse = true;
+    }
+
+    if(Inverse == true){
+        sprintf(&szbuf[0], "-%d.%04d", whl, frac);
+    }else{
+        sprintf(&szbuf[0], "%d.%04d", whl, frac);
+    }
+
+    return szbuf;
 }

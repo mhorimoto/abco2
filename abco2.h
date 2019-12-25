@@ -1,7 +1,7 @@
 #define RXD     0    /* PROGRAMING INTERFACE */
 #define TXD     1    /* PROGRAMING INTERFACE */
-#define D02     2
-#define SAFESW  3    /* SAFEMODE SWITCH */
+#define EMGSTOP 2    /* EMERGENCY STOP SWITCH */
+#define OKGOSW  3    /* OK,GO,YES SWITCH */
 #define VLV1OLS 4    /* VLV1 OLS(バルブ全開) */
 #define VLV1SLS 5    /* VLV1 SLS(バルブ全閉) */
 #define VLV2OLS 6    /* VLV2 OLS(バルブ全開) */
@@ -16,15 +16,15 @@
 #define VLV6SLS 15   /* VLV6 SLS(バルブ全閉) */
 #define VLV7OLS 16   /* VLV7 OLS(バルブ全開) */
 #define VLV7SLS 17   /* VLV7 SLS(バルブ全閉) */
-#define TX1     18   /* SERIAL INTERFACE */
-#define RX1     19   /* SERIAL INTERFACE */
+#define CANCEL  18   /* CANCEL BUTTON */
+#define ALARM_MISSFIRE     19   /* 着火エラー */
 #define SDA     20   /* I2C Data  LCD,熱電対,K33LP,K33ICB */
 #define SCL     21   /* I2C Clock */
 #define BLOWER  22   /* BLOWER MOTOR RELAY-1 */
 #define PUMP    23   /* PUMP MOTOR RELAY-2 */
 #define RLY3    24   /* RELAY RESERVED */
-#define RLY4    25   /* RELAY RESERVED */
-#define RLY5    26   /* RELAY RESERVED */
+#define UECSDHCP 25   /* UECS RESERVED */
+#define UECSSAFE 26   /* UECS RESERVED */
 #define RLY6    27   /* RELAY RESERVED */
 #define RLY7    28   /* RELAY RESERVED */
 #define RLY8    29   /* RELAY RESERVED */
@@ -44,10 +44,10 @@
 #define VLV7B   43   /* VALVE7 OPENNER B */
 #define VLV8A   44   /* VALVE8 OPENNER A */
 #define VLV8B   45   /* VALVE8 OPENNER B */
-#define VLV8OLS 46   /* VALVE8 OLS(バルブ全開) */
-#define VLV8SLS 47   /* VALVE8 SLS(バルブ全閉) */
-#define WLVL1   48   /* 液面レベルセンサ */
-#define PSLVL1  49   /* 圧力センサ */
+#define WLVL1   47   /* 液面レベル1 */
+#define WLVL2   47   /* 液面レベル2 */
+#define PSLVL1  48   /* 圧力センサ1 */
+#define PSLVL2  49   /* 圧力センサ2 */
 #define MISO    50   /* W5500 LAN Interface */
 #define MOSI    51   /* W5500 LAN Interface */
 #define SCK     52   /* W5500 LAN Interface */
