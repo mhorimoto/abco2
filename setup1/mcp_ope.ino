@@ -45,6 +45,14 @@ int show_ADCresolution(int id) {
   return(ret);
 }
 
+void show_Sampling_Data(int id) {
+  Serial.begin(115200);
+  Serial.print("Hot Junction: "); Serial.println(mcp[id].readThermocouple());
+  Serial.print("Cold Junction: "); Serial.println(mcp[id].readAmbient());
+  Serial.print("ADC: "); Serial.print(mcp[id].readADC() * 2); Serial.println(" uV");
+  Serial.end();
+}
+
 void show_ThermocoupleType(int id) {
   Serial.print("Thermocouple type set to ");
   switch (mcp[id].getThermocoupleType()) {
@@ -58,4 +66,21 @@ void show_ThermocoupleType(int id) {
     case MCP9600_TYPE_R:  Serial.print("R"); break;
   }
   Serial.println(" type");
+}
+
+void test_mcp9600(void) {
+  int aval,smenu;
+  float temp;
+  extern char lcdtext[];
+  aval = analogRead(2);
+  smenu = (aval/128)+1;
+  Reset_lcdtext();
+  sprintf(lcdtext,"PORT-%d         ",smenu);
+  lcd.setCursor(0,0);
+  lcd.print(lcdtext);
+  temp = mcp[smenu-1].readThermocouple();
+  lcd.setCursor(0,1);
+  lcd.print("           ");
+  lcd.setCursor(11,1);
+  lcd.print(temp);
 }

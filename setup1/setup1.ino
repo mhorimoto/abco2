@@ -111,7 +111,7 @@ volatile int menu_state = 0; // 0: MAIN MENU
                              // 5: RTC TEST
 volatile int output_test_toggle; // 0:OFF, 1:ON
 
-const char *VERSION = "01E";
+const char *VERSION = "01F";
 
 void setup() {
   int i;
@@ -139,6 +139,8 @@ void setup() {
   net_init();
   //  T-Couple Thermal sensor initilized
   init_mcp9600();
+  show_Sampling_Data(0);
+  show_Sampling_Data(1);
   attachInterrupt(0, emgstop, FALLING);
   attachInterrupt(1, okgo, FALLING);
   attachInterrupt(5, backret, FALLING);
@@ -209,10 +211,16 @@ void loop() {
       lcd.setCursor(0,0);
       lcd.print("INPUT MENU      ");
     }
-    test_input();
     prev_menu = 2;
+    test_input();
     break;
-  case 3:
+  case 3: // TEMPERATURE
+    if (prev_menu!=menu_state) {
+      lcd.setCursor(0,0);
+      lcd.print("TEMPERATURE     ");
+    }
+    prev_menu = 3;
+    test_mcp9600();
     break;
   case 4: // TEST CO2
     if (prev_menu!=menu_state) {
