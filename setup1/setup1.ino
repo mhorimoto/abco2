@@ -111,7 +111,7 @@ volatile int menu_state = 0; // 0: MAIN MENU
                              // 5: RTC TEST
 volatile int output_test_toggle; // 0:OFF, 1:ON
 
-const char *VERSION = "01F";
+const char *VERSION = "020";
 
 void setup() {
   int i;
@@ -139,8 +139,6 @@ void setup() {
   net_init();
   //  T-Couple Thermal sensor initilized
   init_mcp9600();
-  show_Sampling_Data(0);
-  show_Sampling_Data(1);
   attachInterrupt(0, emgstop, FALLING);
   attachInterrupt(1, okgo, FALLING);
   attachInterrupt(5, backret, FALLING);
