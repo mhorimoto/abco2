@@ -65,3 +65,12 @@
 #define  WLVL2         47
 #define  PRSLVL1       48
 #define  PRSLVL2       49
+
+#define  RMODE0     10000
+#define  RMODE1     10001
+#define  RMODE2     10002
+#define  RMODE3     10003
+#define  RMODE4     10004
+#define  RMODE5     10005
+#define  RMODE6     10006
+#define  RMODE7     10007

@@ -75,6 +75,18 @@ A14
 A15			
 */
 
+/*
+MODE Name	V1 V2 V3 V4 V5 V6 V7 BLOWER PUMP
+ 0   全閉	X  X  X  X  X  X  X    X     X
+ 1   CO2貯蔵	X  O  X  O  X  O  X    O     O
+ 2   放散(1)	X  X  O  X  O  X  O    O     X
+ 3   放散(2)	O  X  X  X  O  X  O    O     X
+ 4   外気導入	O  X  X  X  X  O  O    O     X
+ 5   冷却	O  X  X  O  O  X  X    O     X
+ 6   全開	O  O  O  O  O  O  O    X     X
+ 7   緊急停止	X  X  X  O  O  O  X    X     X
+ */
+
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 #include <K30_I2C.h>
@@ -111,7 +123,7 @@ volatile int menu_state = 0; // 0: MAIN MENU
                              // 5: RTC TEST
 volatile int output_test_toggle; // 0:OFF, 1:ON
 
-const char *VERSION = "020";
+const char *VERSION = "022";
 
 void setup() {
   int i;
@@ -169,21 +181,24 @@ void loop() {
     }
     switch(nmval) {
     case 1:
-      tn = "OUTPUT TEST     ";
+      tn = "RUNNING MODE    ";
       break;
     case 2:
-      tn = "INPUT TEST      ";
+      tn = "OUTPUT TEST     ";
       break;
     case 3:
-      tn = "TEMPERATURE     ";
+      tn = "INPUT TEST      ";
       break;
     case 4:
-      tn = "CO2 K33 TEST    ";
+      tn = "TEMPERATURE     ";
       break;
     case 5:
-      tn = "RTC UTIL        ";
+      tn = "CO2 K33 TEST    ";
       break;
     case 6:
+      tn = "RTC UTIL        ";
+      break;
+    case 7:
       tn = "NETWORK UTIL    ";
       break;
     case 11:
@@ -196,52 +211,60 @@ void loop() {
     lcd.setCursor(0,1);
     lcd.print(lcdtext);
     break;
-  case 1: // OUTPUT TEST
+  case 1: // RUNNING MODE
+    if (prev_menu!=menu_state) {
+      lcd.setCursor(0,0);
+      lcd.print("MODE MENU       ");
+    }
+    select_mode();
+    prev_menu = 1;
+    break;
+  case 2: // OUTPUT TEST
     if (prev_menu!=menu_state) {
       lcd.setCursor(0,0);
       lcd.print("OUTPUT MENU     ");
     }
     test_output();
-    prev_menu = 1;
+    prev_menu = 2;
     break;
-  case 2:
+  case 3:
     if (prev_menu!=menu_state) {
       lcd.setCursor(0,0);
       lcd.print("INPUT MENU      ");
     }
-    prev_menu = 2;
+    prev_menu = 3;
     test_input();
     break;
-  case 3: // TEMPERATURE
+  case 4: // TEMPERATURE
     if (prev_menu!=menu_state) {
       lcd.setCursor(0,0);
       lcd.print("TEMPERATURE     ");
     }
-    prev_menu = 3;
+    prev_menu = 4;
     test_mcp9600();
     break;
-  case 4: // TEST CO2
+  case 5: // TEST CO2
     if (prev_menu!=menu_state) {
       lcd.setCursor(0,0);
       lcd.print("CO2 K33 TEST    ");
     }
-    prev_menu = 4;
+    prev_menu = 5;
     test_co2();
     break;
-  case 5: // RTC UTIL
+  case 6: // RTC UTIL
     if (prev_menu!=menu_state) {
       lcd.setCursor(0,0);
       lcd.print("RTC UTIL        ");
     }
-    prev_menu = 5;
+    prev_menu = 6;
     rtc_util();
     break;
-  case 6: // NETWORK UTIL
+  case 7: // NETWORK UTIL
     if (prev_menu!=menu_state) {
       lcd.setCursor(0,0);
       lcd.print("NETWORK UTIL    ");
     }
-    prev_menu = 6;
+    prev_menu = 7;
     net_util();
     break;
   case 11: // SYSTEM RESET
