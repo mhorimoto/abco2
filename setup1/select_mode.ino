@@ -3,74 +3,129 @@
 void select_mode(void) {
   int i,aval,smenu;
   aval = analogRead(2);
-  smenu = (aval/8);
+  smenu = (aval/128);
   switch(smenu) {
   case 0: // MODE 0 全閉
-    _r_mode(RMODE0,"ALL CLOSE       ");
+    _r_mode(RMODE0,"0-ALL CLOSE     ");
     break;
   case 1: // MODE 1 CO2貯蔵
-    _r_mode(RMODE1,"SAVE CO2        ");
+    _r_mode(RMODE1,"1-SAVE CO2      ");
     break;
   case 2: // MODE 2 放散(1)
-    _r_mode(RMODE2,"RADIATION(1)    ");
+    _r_mode(RMODE2,"2-RADIATION(1)  ");
     break;
   case 3: // MODE 3 放散(2)
-    _r_mode(RMODE3,"RADIATION(2)    ");
+    _r_mode(RMODE3,"3-RADIATION(2)  ");
     break;
   case 4: // MODE 4 外気導入
-    _r_mode(RMODE4,"INTAKE OUTAIR   ");
+    _r_mode(RMODE4,"4-INTAKE OUTAIR ");
     break;
   case 5: // MODE 5 冷却
-    _r_mode(RMODE5,"COOLING         ");
+    _r_mode(RMODE5,"5-COOLING       ");
     break;
   case 6: // MODE 6 全開
-    _r_mode(RMODE6,"ALL OPEN        ");
+    _r_mode(RMODE6,"6-ALL OPEN      ");
     break;
   case 7: // MODE 7 緊急停止
-    _r_mode(RMODE7,"EMERGENCY STOP  ");
+    _r_mode(RMODE7,"7-EMERGENCY STOP");
     break;
   }
 }
 
 void _r_mode(int p,char *name) {
   char lcdtext[17];
+  extern int select_mode_toggle;
+  extern int current_mode;
   lcd.setCursor(0,1);
   lcd.print(name);
-  switch(p) {
-  case RMODE0:
-    vlv_close(1);
-    vlv_close(2);
-    vlv_close(3);
-    vlv_close(4);
-    vlv_close(5);
-    vlv_close(6);
-    vlv_close(7);
-    stop_blower();
-    stop_pump();
-    break;
-  case RMODE1:
-    vlv_close(1);
-    vlv_open(2);
-    vlv_close(3);
-    vlv_open(4);
-    vlv_close(5);
-    vlv_open(6);
-    vlv_close(7);
-    run_blower();
-    run_pump();
-    break;
-  case RMODE2:
-    vlv_close(1);
-    vlv_close(2);
-    vlv_open(3);
-    vlv_close(4);
-    vlv_open(5);
-    vlv_close(6);
-    vlv_open(7);
-    run_blower();
-    stop_pump();
-    break;
-
+  if (select_mode_toggle==1) {
+    switch(p) {
+    case RMODE0:
+      vlv_close(1);
+      vlv_close(2);
+      vlv_close(3);
+      vlv_close(4);
+      vlv_close(5);
+      vlv_close(6);
+      vlv_close(7);
+      stop_blower();
+      stop_pump();
+      break;
+    case RMODE1:
+      vlv_close(1);
+      vlv_open(2);
+      vlv_close(3);
+      vlv_open(4);
+      vlv_close(5);
+      vlv_open(6);
+      vlv_close(7);
+      run_blower();
+      run_pump();
+      break;
+    case RMODE2:
+      vlv_close(1);
+      vlv_close(2);
+      vlv_open(3);
+      vlv_close(4);
+      vlv_open(5);
+      vlv_close(6);
+      vlv_open(7);
+      run_blower();
+      stop_pump();
+      break;
+    case RMODE3:
+      vlv_open(1);
+      vlv_close(2);
+      vlv_close(3);
+      vlv_close(4);
+      vlv_open(5);
+      vlv_close(6);
+      vlv_open(7);
+      run_blower();
+      stop_pump();
+      break;
+    case RMODE4:
+      vlv_open(1);
+      vlv_close(2);
+      vlv_close(3);
+      vlv_close(4);
+      vlv_close(5);
+      vlv_open(6);
+      vlv_open(7);
+      run_blower();
+      stop_pump();
+      break;
+    case RMODE5:
+      vlv_open(1);
+      vlv_close(2);
+      vlv_close(3);
+      vlv_open(4);
+      vlv_open(5);
+      vlv_close(6);
+      vlv_close(7);
+      run_blower();
+      stop_pump();
+      break;
+    case RMODE6:
+      vlv_open(1);
+      vlv_open(2);
+      vlv_open(3);
+      vlv_open(4);
+      vlv_open(5);
+      vlv_open(6);
+      vlv_open(7);
+      stop_blower();
+      stop_pump();
+      break;
+    case RMODE7:
+      ems_stop();
+      break;
+    }
+    lcd.setCursor(13,1);
+    lcd.print("SET");
+    current_mode = p;
+    select_mode_toggle=0;
+    delay(800);
   }
 }
 
@@ -156,3 +211,15 @@ void stop_pump(void) {
   digitalWrite(D_PUMP,LOW);
 }
 
+void ems_stop(void) {
+  vlv_close(1);
+  vlv_close(2);
+  vlv_close(3);
+  vlv_open(4);
+  vlv_open(5);
+  vlv_open(6);
+  vlv_close(7);
+  stop_blower();
+  stop_pump();
+  // バルブの動作が完了したらバルブへの電源を切る動作が必要
+}

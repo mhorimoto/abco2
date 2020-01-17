@@ -112,7 +112,7 @@ int nmval  = 0;
 char lcdtext[17];
 char lcdtitle[17];
 byte MACAddress[6];
-
+int  current_mode=0;
 volatile int f_reset = 0;
 volatile int prev_menu = 0;
 volatile int menu_state = 0; // 0: MAIN MENU
@@ -122,8 +122,9 @@ volatile int menu_state = 0; // 0: MAIN MENU
                              // 4: CO2 TEST
                              // 5: RTC TEST
 volatile int output_test_toggle; // 0:OFF, 1:ON
+volatile int select_mode_toggle; // 0:OFF, 1:ON
 
-const char *VERSION = "022";
+const char *VERSION = "025";
 
 void setup() {
   int i;
@@ -214,7 +215,8 @@ void loop() {
   case 1: // RUNNING MODE
     if (prev_menu!=menu_state) {
       lcd.setCursor(0,0);
-      lcd.print("MODE MENU       ");
+      sprintf(lcdtext,"MODE MENU (%d)   ",current_mode);
+      lcd.print(lcdtext);
     }
     select_mode();
     prev_menu = 1;
@@ -285,7 +287,7 @@ void emgstop(void) {
   Serial.end();
   if (f_reset==1) {
     asm volatile(" jmp 0");
-  }    
+  }
 }
 
 void okgo(void) {
@@ -296,7 +298,10 @@ void okgo(void) {
   case 0:
     menu_state = nmval;
     break;
-  case 1: // IN OUTPUT_TEST
+  case 1: // IN SELECT MODE
+    select_mode_toggle = 1;
+    break;
+  case 2: // IN OUTPUT_TEST
     output_test_toggle = 1;
     break;
   case 11: // SYSTEM RESET
@@ -310,7 +315,7 @@ void backret(void) {
   Serial.println("BACK RETURN");
   Serial.end();
   switch(menu_state) {
-  case 1:
+  case 2:
     test_output_all_reset();
     break;
   }
