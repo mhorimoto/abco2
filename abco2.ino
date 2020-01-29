@@ -1,7 +1,7 @@
 /////////////////////////////////////////
 //UARDECS Sample Program "DummyThermocouple"
 //UECS ccm "TCTemp" sending test Ver1.0
-//By Masafumi Horimoto 2019/09/12
+//By Masafumi Horimoto 2020/01/29
 //////////////////////////////////////////
 // -*- mode : C++ -*-
 //[概要]
@@ -13,7 +13,31 @@
 #include <avr/pgmspace.h>
 #include <EEPROM.h>
 #include <Uardecs_mega.h>
+#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+#include <K30_I2C.h>
+#include <RtcDS3231.h>
+#include <AT24CX.h>
+#include <Adafruit_I2CDevice.h>
+#include <Adafruit_I2CRegister.h>
+#include <Adafruit_MCP9600.h>
 #include "abco2.h"
+
+const char *VERSION = "U0011";
+
+/////////////////////////////////////
+// Hardware Define
+/////////////////////////////////////
+LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+char lcdtext[17];
+char lcdtitle[17];
+
+RtcDS3231<TwoWire> Rtc(Wire);
+K30_I2C          k33lp  = K30_I2C(0x6c);
+K30_I2C          k33icb = K30_I2C(0x6a);
+AT24CX           atmem(7,32);
+Adafruit_MCP9600 mcp[8];
+int mcp96_addr[]={0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67};
 
 /////////////////////////////////////
 //IP reset jupmer pin setting
@@ -41,7 +65,6 @@ UECSOriginalAttribute U_orgAttribute;
 //////////////////////////////////
 #define DECIMAL_DIGIT	1 //小数桁数
 
-const int U_HtmlLine = 34; //Total number of HTML table rows.
 
 // 各種センサの値
 // センサの値は設定しないので UECSSHOWDATAで表示する。
@@ -73,15 +96,16 @@ signed long t1tValue[8];
 
 // 液面レベル
 // H/Lの二者択一。UECSSHOWSTRING で表示する。
-const char WATER_LVL[] PROGMEM = "液面レベル";
+const char WATER_LVL1[] PROGMEM = "液面レベル1";
+const char WATER_LVL2[] PROGMEM = "液面レベル2";
 const char WLVL_HIGH[] PROGMEM = "HIGH";
 const char WLVL_LOW[] PROGMEM  = "LOW";
 const char *StrWATER_LVL[2] = {
   WLVL_HIGH,
   WLVL_LOW
 };
-boolean waterLevel;          // I/Oから信号を受電するため
-signed long ShowWaterLevel;  // 表示のインデックスのため
+boolean waterLevel[2];          // I/Oから信号を受電するため
+signed long ShowWaterLevel[2];  // 表示のインデックスのため
 
 // 圧力センサ
 // H/Lの二者択一。UECSSHOWSTRING で表示する。
@@ -93,7 +117,7 @@ const char *StrPRESS_LVL[2] = {
   PRESS_LOW
 };
 boolean pressLevel;          // I/Oから信号を受電するため
-signed long ShowPressLevel;  // 表示のインデックスのため
+signed long ShowPressLevel[2];  // 表示のインデックスのため
 
 
 // CO2センサ
@@ -224,7 +248,10 @@ const char *StrMOTOSW[3] = {
 signed long setMOTO_ON_OFF_AUTO[2];
 signed long statusMOTO_ON_OFF_AUTO[2];
 
-
+// Function Selector
+//
+const char FUNCSEL[] PROGMEM = "FUNCSEL";
+unsigned long a2in;
 
 //●ダミー素材の定義
 //dummy value
@@ -232,10 +259,13 @@ const char NONES[] PROGMEM= "";
 const char** DUMMY = NULL;
 
 //表示素材の登録
+const int U_HtmlLine = 43; //Total number of HTML table rows.
 struct UECSUserHtml U_html[U_HtmlLine]={
   //{名前,入出力形式	,単位 ,詳細説明,選択肢文字列	,選択肢数,値	,最小値,最大値,小数桁数}
   {MOTONAME0, UECSSHOWSTRING, NONES, VLVSTSNOTE0,StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[0]),0,0,0},
+  {MOTONAME0, UECSSELECTDATA, NONES, VLVNOTE0,   StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[0]),0,0,0},
   {MOTONAME1, UECSSHOWSTRING, NONES, VLVSTSNOTE1,StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[1]),0,0,0},
+  {FUNCSEL,   UECSSHOWDATA,   NONES, NONES,      DUMMY,    0,&(a2in),     0, 0, 0},
   {T1TEMP0, UECSSHOWDATA, TempUNIT, T1NOTE0, DUMMY, 0,&(t1tValue[0])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP1, UECSSHOWDATA, TempUNIT, T1NOTE1, DUMMY, 0,&(t1tValue[1])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP2, UECSSHOWDATA, TempUNIT, T1NOTE2, DUMMY, 0,&(t1tValue[2])	, 0, 0, T1T_DECIMAL_DIGIT},
@@ -244,6 +274,13 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   {T1TEMP5, UECSSHOWDATA, TempUNIT, T1NOTE5, DUMMY, 0,&(t1tValue[5])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP6, UECSSHOWDATA, TempUNIT, T1NOTE6, DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP6, UECSSHOWDATA, TempUNIT, T1NOTE6, DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {CO2NAME, UECSSHOWDATA, CO2UNIT,  CO2NOTE1,DUMMY, 0,&(co2detail), 0, 0, CO2_DIGIT},
+  {CO2NAME, UECSSHOWDATA, CO2UNIT,  CO2NOTE2,DUMMY, 0,&(co2bigger), 0, 0, CO2_DIGIT},
+  {WATER_LVL1, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[0]),0,0,0},
+  {WATER_LVL2, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[1]),0,0,0},
+  {PRESS_LVL,  UECSSHOWSTRING, NONES, NONES, StrPRESS_LVL,2,&(ShowPressLevel[0]),0,0,0},
   {VLVSTSNAME0, UECSSHOWSTRING, NONES, VLVSTSNOTE0,StrVLVSTS,3,&(VLVStatus[0]),0,0,0},
   {VLVSTSNAME1, UECSSHOWSTRING, NONES, VLVSTSNOTE1,StrVLVSTS,3,&(VLVStatus[1]),0,0,0},
   {VLVSTSNAME2, UECSSHOWSTRING, NONES, VLVSTSNOTE2,StrVLVSTS,3,&(VLVStatus[2]),0,0,0},
@@ -252,7 +289,6 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   {VLVSTSNAME5, UECSSHOWSTRING, NONES, VLVSTSNOTE5,StrVLVSTS,3,&(VLVStatus[5]),0,0,0},
   {VLVSTSNAME6, UECSSHOWSTRING, NONES, VLVSTSNOTE6,StrVLVSTS,3,&(VLVStatus[6]),0,0,0},
   {VLVSTSNAME7, UECSSHOWSTRING, NONES, VLVSTSNOTE7,StrVLVSTS,3,&(VLVStatus[7]),0,0,0},
-  
   {VLVNAME0,UECSSELECTDATA,NONES,VLVNOTE0, StrVLV_SELECT,3, &(set_VLV_SELECT[0]), 0, 0, 0},
   {VCTNAME0,UECSINPUTDATA, TempUNIT,VCTNOTE0,DUMMY, 0,&(setVCTval[0]), 100, 1000, T1T_DECIMAL_DIGIT},
   {VLVNAME1,UECSSELECTDATA,NONES,VLVNOTE1, StrVLV_SELECT,3, &(set_VLV_SELECT[1]), 0, 0, 0},
@@ -284,15 +320,31 @@ struct UECSUserHtml U_html[U_HtmlLine]={
 //define CCMID for identify
 //CCMID_dummy must put on last
 enum {
-  CCMID_TCTemp1,CCMID_OPETemp1,
-  CCMID_TCTemp2,CCMID_OPETemp2,
-  CCMID_TCTemp3,CCMID_OPETemp3,
-  CCMID_TCTemp4,CCMID_OPETemp4,
-  CCMID_TCTemp5,CCMID_OPETemp5,
-  CCMID_TCTemp6,CCMID_OPETemp6,
-  CCMID_TCTemp7,CCMID_OPETemp7,
-  CCMID_TCTemp8,CCMID_OPETemp8,
   CCMID_cnd,
+  CCMID_FUNCSEL,
+  CCMID_BLOWER,
+  CCMID_PUMP,
+  CCMID_TCTemp1,
+  CCMID_TCTemp2,
+  CCMID_TCTemp3,
+  CCMID_TCTemp4,
+  CCMID_TCTemp5,
+  CCMID_TCTemp6,
+  CCMID_TCTemp7,
+  CCMID_TCTemp8,
+  CCMID_K33LP,
+  CCMID_K33ICB,
+  CCMID_WL1,
+  CCMID_WL2,
+  CCMID_PRS1,
+  CCMID_OPETemp1,
+  CCMID_OPETemp2,
+  CCMID_OPETemp3,
+  CCMID_OPETemp4,
+  CCMID_OPETemp5,
+  CCMID_OPETemp6,
+  CCMID_OPETemp7,
+  CCMID_OPETemp8,
   CCMID_dummy,
 };
 
@@ -335,7 +387,33 @@ const char ccmTypeOpeTemp6[] PROGMEM= "OPETemp.6";
 const char ccmNameOpeTemp7[] PROGMEM= "T7動作温度";
 const char ccmTypeOpeTemp7[] PROGMEM= "OPETemp.7";
 const char ccmNameOpeTemp8[] PROGMEM= "T8動作温度";
-const char ccmTypeOpeTemp8[] PROGMEM= "OPETemp8.";
+const char ccmTypeOpeTemp8[] PROGMEM= "OPETemp.8";
+
+const char ccmUnitCO2[] PROGMEM= "ppm";
+const char ccmNameCO2LP[] PROGMEM= "CO2LP";
+const char ccmTypeCO2LP[] PROGMEM= "CO2LP1";
+const char ccmNameCO2ICB[] PROGMEM= "CO2ICB";
+const char ccmTypeCO2ICB[] PROGMEM= "CO2ICB1";
+
+const char ccmNameWL1[] PROGMEM= "液面レベル1";
+const char ccmTypeWL1[] PROGMEM= "waterLvl.1";
+const char ccmNameWL2[] PROGMEM= "液面レベル2";
+const char ccmTypeWL2[] PROGMEM= "waterLvl.2";
+
+const char ccmNamePRS1[] PROGMEM= "圧力1";
+const char ccmTypePRS1[] PROGMEM= "AirPress.1";
+
+const char ccmNameFUNC[] PROGMEM="FUNCSEL";
+const char ccmTypeFUNC[] PROGMEM="funcsel.mIC";
+const char ccmUnitFUNC[] PROGMEM= "";
+
+const char ccmNameBLOWER[] PROGMEM="ブロアー";
+const char ccmTypeBLOWER[] PROGMEM="blower.mIC";
+const char ccmUnitBLOWER[] PROGMEM= "";
+
+const char ccmNamePUMP[] PROGMEM="ポンプ";
+const char ccmTypePUMP[] PROGMEM="pump.mIC";
+const char ccmUnitPUMP[] PROGMEM= "";
 
 const char ccmNameCnd[] PROGMEM= "NodeCondition";
 const char ccmTypeCnd[] PROGMEM= "cnd.mIC";
@@ -347,31 +425,39 @@ void UserInit(){
   //You must assign unique MAC address to each nodes.
   //MACアドレス設定、必ずEthernet Shieldに書かれた値を入力して下さい。
   //全てのノードに異なるMACアドレスを設定する必要があります。
-  U_orgAttribute.mac[0] = 0x02;
-  U_orgAttribute.mac[1] = 0xa2;
-  U_orgAttribute.mac[2] = 0x73;
-  U_orgAttribute.mac[3] = 0x8f;
-  U_orgAttribute.mac[4] = 0x00;
-  U_orgAttribute.mac[5] = 0x01;
+  U_orgAttribute.mac[0] = EEPROM.read(4090+0); // 0x02;
+  U_orgAttribute.mac[1] = EEPROM.read(4090+1); // 0xa2;
+  U_orgAttribute.mac[2] = EEPROM.read(4090+2); // 0x73;
+  U_orgAttribute.mac[3] = EEPROM.read(4090+3); // 0x8f;
+  U_orgAttribute.mac[4] = EEPROM.read(4090+4); // 0x00;
+  U_orgAttribute.mac[5] = EEPROM.read(4090+5); // 0x01;
   
   //Set ccm list
+  UECSsetCCM(true, CCMID_cnd   ,  ccmNameCnd ,  ccmTypeCnd ,  ccmUnitCnd , 29, 0, A_1S_0);
+  UECSsetCCM(true, CCMID_FUNCSEL, ccmNameFUNC,  ccmTypeFUNC,  ccmUnitFUNC, 29, 0, A_1S_0);
+  UECSsetCCM(true, CCMID_BLOWER,  ccmNameBLOWER,ccmTypeBLOWER,ccmUnitBLOWER,29, 0, A_10S_0);
+  UECSsetCCM(true, CCMID_PUMP,    ccmNamePUMP,  ccmTypePUMP,  ccmUnitPUMP, 29, 0, A_10S_0);
   UECSsetCCM(true, CCMID_TCTemp1, ccmNameTemp1, ccmTypeTemp1, ccmUnitTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp1,ccmNameOpeTemp1, ccmTypeOpeTemp1, ccmUnitOpeTemp, 29, 1, A_10S_0);
   UECSsetCCM(true, CCMID_TCTemp2, ccmNameTemp2, ccmTypeTemp2, ccmUnitTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp2,ccmNameOpeTemp2, ccmTypeOpeTemp2, ccmUnitOpeTemp, 29, 1, A_10S_0);
   UECSsetCCM(true, CCMID_TCTemp3, ccmNameTemp3, ccmTypeTemp3, ccmUnitTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp3,ccmNameOpeTemp3, ccmTypeOpeTemp3, ccmUnitOpeTemp, 29, 1, A_10S_0);
   UECSsetCCM(true, CCMID_TCTemp4, ccmNameTemp4, ccmTypeTemp4, ccmUnitTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp4,ccmNameOpeTemp4, ccmTypeOpeTemp4, ccmUnitOpeTemp, 29, 1, A_10S_0);
   UECSsetCCM(true, CCMID_TCTemp5, ccmNameTemp5, ccmTypeTemp5, ccmUnitTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp5,ccmNameOpeTemp5, ccmTypeOpeTemp5, ccmUnitOpeTemp, 29, 1, A_10S_0);
   UECSsetCCM(true, CCMID_TCTemp6, ccmNameTemp6, ccmTypeTemp6, ccmUnitTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp6,ccmNameOpeTemp6, ccmTypeOpeTemp6, ccmUnitOpeTemp, 29, 1, A_10S_0);
   UECSsetCCM(true, CCMID_TCTemp7, ccmNameTemp7, ccmTypeTemp7, ccmUnitTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp7,ccmNameOpeTemp7, ccmTypeOpeTemp7, ccmUnitOpeTemp, 29, 1, A_10S_0);
   UECSsetCCM(true, CCMID_TCTemp8, ccmNameTemp8, ccmTypeTemp8, ccmUnitTemp, 29, 1, A_10S_0);
+  UECSsetCCM(true, CCMID_K33LP,   ccmNameCO2LP, ccmTypeCO2LP, ccmUnitCO2,  29, 0, A_10S_0);
+  UECSsetCCM(true, CCMID_K33ICB,  ccmNameCO2ICB,ccmTypeCO2ICB,ccmUnitCO2,  29, 0, A_10S_0);
+  UECSsetCCM(true, CCMID_WL1,     ccmNameWL1,   ccmTypeWL1,   NONES,       29, 0, A_10S_0);
+  UECSsetCCM(true, CCMID_WL2,     ccmNameWL2,   ccmTypeWL2,   NONES,       29, 0, A_10S_0);
+  UECSsetCCM(true, CCMID_PRS1,    ccmNamePRS1,  ccmTypePRS1,  NONES,       29, 0, A_10S_0);
+  UECSsetCCM(true, CCMID_OPETemp1,ccmNameOpeTemp1, ccmTypeOpeTemp1, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  UECSsetCCM(true, CCMID_OPETemp2,ccmNameOpeTemp2, ccmTypeOpeTemp2, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  UECSsetCCM(true, CCMID_OPETemp3,ccmNameOpeTemp3, ccmTypeOpeTemp3, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  UECSsetCCM(true, CCMID_OPETemp4,ccmNameOpeTemp4, ccmTypeOpeTemp4, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  UECSsetCCM(true, CCMID_OPETemp5,ccmNameOpeTemp5, ccmTypeOpeTemp5, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  UECSsetCCM(true, CCMID_OPETemp6,ccmNameOpeTemp6, ccmTypeOpeTemp6, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  UECSsetCCM(true, CCMID_OPETemp7,ccmNameOpeTemp7, ccmTypeOpeTemp7, ccmUnitOpeTemp, 29, 1, A_10S_0);
   UECSsetCCM(true, CCMID_OPETemp8,ccmNameOpeTemp8, ccmTypeOpeTemp8, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_cnd   , ccmNameCnd , ccmTypeCnd , ccmUnitCnd , 29, 0, A_1S_0);
 }
 
 
@@ -396,21 +482,45 @@ void UserEveryLoop() {
 }
 
 void loop(){
-  int a0v;
+  int rc,co2lp,co2icb;
   UECSloop();
-  a0v = analogRead(A0);
-  U_ccmList[CCMID_TCTemp1].value= a0v * 0.98;
+  a2in = analogRead(A2);
+  U_ccmList[CCMID_FUNCSEL].value= a2in;
+  k33_ope();
+  if (digitalRead(PRSLVL1)==HIGH) {
+    ShowPressLevel[0] = 0; // HIGH
+  } else {
+    ShowPressLevel[0] = 1; // LOW
+  }
+  U_ccmList[CCMID_PRS1].value = ShowPressLevel[0];
+  if (digitalRead(WLVL1)==HIGH) {
+    ShowWaterLevel[0] = 0; // HIGH
+  } else {
+    ShowWaterLevel[0] = 1; // LOW
+  }
+  U_ccmList[CCMID_WL1].value = ShowWaterLevel[0];
+  if (digitalRead(WLVL2)==HIGH) {
+    ShowWaterLevel[1] = 0; // HIGH
+  } else {
+    ShowWaterLevel[1] = 1; // LOW
+  }
+  U_ccmList[CCMID_WL2].value = ShowWaterLevel[1];
+  if (digitalRead(BLOWER)==HIGH) {
+    U_ccmList[CCMID_BLOWER].value = 1; // RUN
+    statusMOTO_ON_OFF_AUTO[0] = 1;
+  } else {
+   U_ccmList[CCMID_BLOWER].value = 2; // STOP
+    statusMOTO_ON_OFF_AUTO[0] = 2;
+  } 
   ChangeThermostat();
 }
 
 void setup(){
-  extern byte megaEtherSS;
+  //  extern byte megaEtherSS;
   int i;
-  megaEtherSS = 53; // SS is pin 53
+  //  megaEtherSS = 53; // SS is pin 53
   UECSsetup();
-  pinMode(A0,INPUT);
-  pinMode(BLOWER,OUTPUT);
-  digitalWrite(BLOWER,HIGH);
+  pinMode(A2,INPUT);
   U_ccmList[CCMID_OPETemp1].value=setVCTval[0];
   U_ccmList[CCMID_TCTemp1].validity = true;
   for (i=0;i<8;i++) {
@@ -419,10 +529,37 @@ void setup(){
   for (i=0;i<2;i++) {
     statusMOTO_ON_OFF_AUTO[i] = 0;
   }
+  pinMode(2,INPUT_PULLUP);
+  pinMode(3,INPUT_PULLUP);
+  pinMode(18,INPUT_PULLUP);
+  pinMode(BURNER,INPUT_PULLUP);
+  pinMode(ALRM_MISSFIRE,INPUT_PULLUP);
+  pinMode(WLVL1,INPUT);
+  pinMode(WLVL2,INPUT);
+  pinMode(PRSLVL1,INPUT);
+  pinMode(PRSLVL2,INPUT);
+  // Setup OUTPUT Pins
+  for(i=22;i<=24;i++) {
+    pinMode(i,OUTPUT);
+    digitalWrite(i,LOW);
+  }
+  for(i=30;i<=43;i++) {
+    pinMode(i,OUTPUT);
+    digitalWrite(i,LOW);
+  }
+  init_mcp9600();
+  sprintf(lcdtitle,"ABCO2 %6s",VERSION);
+  lcd.init();
+  lcd.backlight();
+  lcd.setCursor(0,0);
+  lcd.print(lcdtitle);
+  sprintf(lcdtext,"%d.%d.%d.%d",U_orgAttribute.ip[0],U_orgAttribute.ip[1],U_orgAttribute.ip[2],U_orgAttribute.ip[3]);
+  lcd.setCursor(0,1);
+  lcd.print(lcdtext);
 }
 
 //---------------------------------------------------------
-//サーモスタット動作を変化させる関数
+//バルブ動作を変化させる関数
 //---------------------------------------------------------
 void ChangeThermostat(){
   t1tValue[0] = U_ccmList[CCMID_TCTemp1].value;
@@ -582,10 +719,32 @@ void ChangeThermostat(){
   //   U_ccmList[CCMID_cnd].value=0;  //OFF
   // }
   VLVStatus[0] = U_ccmList[CCMID_cnd].value;
-  if (VLVStatus[0]==1) {
-    digitalWrite(BLOWER,LOW);
-  } else {
-    digitalWrite(BLOWER,HIGH);
-  }
+  //if (VLVStatus[0]==1) {
+  //    digitalWrite(BLOWER,LOW);
+  //  } else {
+  //    digitalWrite(BLOWER,HIGH);
+  //  }
 }
 
+void run_blower(void) {
+  digitalWrite(D_BLOWER,HIGH);
+}
+
+void stop_blower(void) {
+  digitalWrite(D_BLOWER,LOW);
+}
+
+void run_pump(void) {
+  digitalWrite(D_PUMP,HIGH);
+}
+
+void stop_pump(void) {
+  digitalWrite(D_PUMP,LOW);
+}
+
+void Reset_lcdtext(void) {
+  int i;
+  for(i=0;i<17;i++) {
+    lcdtext[i] = (char)NULL;
+  }
+}

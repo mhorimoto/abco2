@@ -91,12 +91,18 @@ void _test_output(int p,char *name) {
   lcd.print(lcdtext);
   d = digitalRead(p);
   if (d==HIGH) {
+    delay(5);
+    d = digitalRead(p);
+    if (d!=HIGH) return;
     sprintf(lcdtext,"%9s IS ON ",name);
     if (output_test_toggle==1) {
       digitalWrite(p,LOW);
       output_test_toggle = 0;
     }
   } else {
+    delay(5);
+    d = digitalRead(p);
+    if (d==HIGH) return;
     sprintf(lcdtext,"%9s IS OFF",name);
     if (output_test_toggle==1) {
       digitalWrite(p,HIGH);

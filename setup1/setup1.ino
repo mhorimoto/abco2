@@ -124,7 +124,7 @@ volatile int menu_state = 0; // 0: MAIN MENU
 volatile int output_test_toggle; // 0:OFF, 1:ON
 volatile int select_mode_toggle; // 0:OFF, 1:ON
 
-const char *VERSION = "025";
+const char *VERSION = "028";
 
 void setup() {
   int i;
