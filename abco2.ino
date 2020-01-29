@@ -23,7 +23,7 @@
 #include <Adafruit_MCP9600.h>
 #include "abco2.h"
 
-const char *VERSION = "U0011";
+const char *VERSION = "U0015";
 
 /////////////////////////////////////
 // Hardware Define
@@ -259,13 +259,20 @@ const char NONES[] PROGMEM= "";
 const char** DUMMY = NULL;
 
 //表示素材の登録
-const int U_HtmlLine = 43; //Total number of HTML table rows.
+const int U_HtmlLine = 26; //Total number of HTML table rows.
 struct UECSUserHtml U_html[U_HtmlLine]={
   //{名前,入出力形式	,単位 ,詳細説明,選択肢文字列	,選択肢数,値	,最小値,最大値,小数桁数}
-  {MOTONAME0, UECSSHOWSTRING, NONES, VLVSTSNOTE0,StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[0]),0,0,0},
   {MOTONAME0, UECSSELECTDATA, NONES, VLVNOTE0,   StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[0]),0,0,0},
-  {MOTONAME1, UECSSHOWSTRING, NONES, VLVSTSNOTE1,StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[1]),0,0,0},
-  {FUNCSEL,   UECSSHOWDATA,   NONES, NONES,      DUMMY,    0,&(a2in),     0, 0, 0},
+  {MOTONAME1, UECSSELECTDATA, NONES, VLVNOTE0,   StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[1]),0,0,0},
+  {VLVNAME0,UECSSELECTDATA,NONES,VLVNOTE0, StrVLV_SELECT,3, &(set_VLV_SELECT[0]), 0, 0, 0},
+  {VLVNAME1,UECSSELECTDATA,NONES,VLVNOTE1, StrVLV_SELECT,3, &(set_VLV_SELECT[1]), 0, 0, 0},
+  {VLVNAME2,UECSSELECTDATA,NONES,VLVNOTE2, StrVLV_SELECT,3, &(set_VLV_SELECT[2]), 0, 0, 0},
+  {VLVNAME3,UECSSELECTDATA,NONES,VLVNOTE3, StrVLV_SELECT,3, &(set_VLV_SELECT[3]), 0, 0, 0},
+  {VLVNAME4,UECSSELECTDATA,NONES,VLVNOTE4, StrVLV_SELECT,3, &(set_VLV_SELECT[4]), 0, 0, 0},
+  {VLVNAME5,UECSSELECTDATA,NONES,VLVNOTE5, StrVLV_SELECT,3, &(set_VLV_SELECT[5]), 0, 0, 0},
+  {VLVNAME6,UECSSELECTDATA,NONES,VLVNOTE6, StrVLV_SELECT,3, &(set_VLV_SELECT[6]), 0, 0, 0},
+  {VLVNAME7,UECSSELECTDATA,NONES,VLVNOTE7, StrVLV_SELECT,3, &(set_VLV_SELECT[7]), 0, 0, 0},
+  {FUNCSEL,   UECSSHOWDATA,   NONES, NONES,      DUMMY,    0,&(a2in),     0, 0, 0}, // #10
   {T1TEMP0, UECSSHOWDATA, TempUNIT, T1NOTE0, DUMMY, 0,&(t1tValue[0])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP1, UECSSHOWDATA, TempUNIT, T1NOTE1, DUMMY, 0,&(t1tValue[1])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP2, UECSSHOWDATA, TempUNIT, T1NOTE2, DUMMY, 0,&(t1tValue[2])	, 0, 0, T1T_DECIMAL_DIGIT},
@@ -275,42 +282,20 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   {T1TEMP6, UECSSHOWDATA, TempUNIT, T1NOTE6, DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP6, UECSSHOWDATA, TempUNIT, T1NOTE6, DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT}, // #20
   {CO2NAME, UECSSHOWDATA, CO2UNIT,  CO2NOTE1,DUMMY, 0,&(co2detail), 0, 0, CO2_DIGIT},
   {CO2NAME, UECSSHOWDATA, CO2UNIT,  CO2NOTE2,DUMMY, 0,&(co2bigger), 0, 0, CO2_DIGIT},
   {WATER_LVL1, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[0]),0,0,0},
   {WATER_LVL2, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[1]),0,0,0},
   {PRESS_LVL,  UECSSHOWSTRING, NONES, NONES, StrPRESS_LVL,2,&(ShowPressLevel[0]),0,0,0},
-  {VLVSTSNAME0, UECSSHOWSTRING, NONES, VLVSTSNOTE0,StrVLVSTS,3,&(VLVStatus[0]),0,0,0},
-  {VLVSTSNAME1, UECSSHOWSTRING, NONES, VLVSTSNOTE1,StrVLVSTS,3,&(VLVStatus[1]),0,0,0},
-  {VLVSTSNAME2, UECSSHOWSTRING, NONES, VLVSTSNOTE2,StrVLVSTS,3,&(VLVStatus[2]),0,0,0},
-  {VLVSTSNAME3, UECSSHOWSTRING, NONES, VLVSTSNOTE3,StrVLVSTS,3,&(VLVStatus[3]),0,0,0},
-  {VLVSTSNAME4, UECSSHOWSTRING, NONES, VLVSTSNOTE4,StrVLVSTS,3,&(VLVStatus[4]),0,0,0},
-  {VLVSTSNAME5, UECSSHOWSTRING, NONES, VLVSTSNOTE5,StrVLVSTS,3,&(VLVStatus[5]),0,0,0},
-  {VLVSTSNAME6, UECSSHOWSTRING, NONES, VLVSTSNOTE6,StrVLVSTS,3,&(VLVStatus[6]),0,0,0},
-  {VLVSTSNAME7, UECSSHOWSTRING, NONES, VLVSTSNOTE7,StrVLVSTS,3,&(VLVStatus[7]),0,0,0},
-  {VLVNAME0,UECSSELECTDATA,NONES,VLVNOTE0, StrVLV_SELECT,3, &(set_VLV_SELECT[0]), 0, 0, 0},
-  {VCTNAME0,UECSINPUTDATA, TempUNIT,VCTNOTE0,DUMMY, 0,&(setVCTval[0]), 100, 1000, T1T_DECIMAL_DIGIT},
-  {VLVNAME1,UECSSELECTDATA,NONES,VLVNOTE1, StrVLV_SELECT,3, &(set_VLV_SELECT[1]), 0, 0, 0},
-  {VCTNAME1,UECSINPUTDATA, TempUNIT,VCTNOTE1,DUMMY, 0,&(setVCTval[1]), 100, 1000, T1T_DECIMAL_DIGIT},
-  {VLVNAME2,UECSSELECTDATA,NONES,VLVNOTE2, StrVLV_SELECT,3, &(set_VLV_SELECT[2]), 0, 0, 0},
-  {VCTNAME2,UECSINPUTDATA, TempUNIT,VCTNOTE2,DUMMY, 0,&(setVCTval[2]), 100, 1000, T1T_DECIMAL_DIGIT},
-  {VLVNAME3,UECSSELECTDATA,NONES,VLVNOTE3, StrVLV_SELECT,3, &(set_VLV_SELECT[3]), 0, 0, 0},
-  {VCTNAME3,UECSINPUTDATA, TempUNIT,VCTNOTE3,DUMMY, 0,&(setVCTval[3]), 100, 1000, T1T_DECIMAL_DIGIT},
-  {VLVNAME4,UECSSELECTDATA,NONES,VLVNOTE4, StrVLV_SELECT,3, &(set_VLV_SELECT[4]), 0, 0, 0},
-  {VCTNAME4,UECSINPUTDATA, TempUNIT,VCTNOTE4,DUMMY, 0,&(setVCTval[4]), 100, 1000, T1T_DECIMAL_DIGIT},
-  {VLVNAME5,UECSSELECTDATA,NONES,VLVNOTE5, StrVLV_SELECT,3, &(set_VLV_SELECT[5]), 0, 0, 0},
-  {VCTNAME5,UECSINPUTDATA, TempUNIT,VCTNOTE5,DUMMY, 0,&(setVCTval[5]), 100, 1000, T1T_DECIMAL_DIGIT},
-  {VLVNAME6,UECSSELECTDATA,NONES,VLVNOTE6, StrVLV_SELECT,3, &(set_VLV_SELECT[6]), 0, 0, 0},
-  {VCTNAME6,UECSINPUTDATA, TempUNIT,VCTNOTE6,DUMMY, 0,&(setVCTval[6]), 100, 1000, T1T_DECIMAL_DIGIT},
-  {VLVNAME7,UECSSELECTDATA,NONES,VLVNOTE7, StrVLV_SELECT,3, &(set_VLV_SELECT[7]), 0, 0, 0},
-  {VCTNAME7,UECSINPUTDATA, TempUNIT,VCTNOTE7,DUMMY, 0,&(setVCTval[7]), 100, 1000, T1T_DECIMAL_DIGIT},
-  //  {VLVNAME1, UECSSELECTDATA,NONES, &(showValueStatus1), stringSELECT,3,
-  //  {VLVNAME1,UECSSELECTDATA,&(setONTempFromWeb1),&(showValueStatus1),
-  //  {NAME0,UECSSHOWDATA	,UNIT0,NOTE0, DUMMY	, 0,  &(showValueTemp)	, 0, 0, DECIMAL_DIGIT},
-  //  {NAME1,UECSSELECTDATA	,NONES,NOTE1, stringSELECT,3, &(setONOFFAUTO)	, 0, 0, 0},
-  //  {NAME2,UECSINPUTDATA	,UNIT2,NOTE2, DUMMY	, 0,  &(setONTempFromWeb), 100, 1000, DECIMAL_DIGIT},
-  //  {NAME3,UECSSHOWSTRING	,NONES,NOTE3, stringSHOW, 2,  &(showValueStatus), 0, 0, 0},
+  // {VLVSTSNAME0, UECSSHOWSTRING, NONES, VLVSTSNOTE0,StrVLVSTS,3,&(VLVStatus[0]),0,0,0},
+  // {VLVSTSNAME1, UECSSHOWSTRING, NONES, VLVSTSNOTE1,StrVLVSTS,3,&(VLVStatus[1]),0,0,0},
+  // {VLVSTSNAME2, UECSSHOWSTRING, NONES, VLVSTSNOTE2,StrVLVSTS,3,&(VLVStatus[2]),0,0,0},
+  // {VLVSTSNAME3, UECSSHOWSTRING, NONES, VLVSTSNOTE3,StrVLVSTS,3,&(VLVStatus[3]),0,0,0},
+  // {VLVSTSNAME4, UECSSHOWSTRING, NONES, VLVSTSNOTE4,StrVLVSTS,3,&(VLVStatus[4]),0,0,0}, // #30
+  // {VLVSTSNAME5, UECSSHOWSTRING, NONES, VLVSTSNOTE5,StrVLVSTS,3,&(VLVStatus[5]),0,0,0},
+  // {VLVSTSNAME6, UECSSHOWSTRING, NONES, VLVSTSNOTE6,StrVLVSTS,3,&(VLVStatus[6]),0,0,0},
+  // {VLVSTSNAME7, UECSSHOWSTRING, NONES, VLVSTSNOTE7,StrVLVSTS,3,&(VLVStatus[7]),0,0,0},
 };
 
 
@@ -337,14 +322,14 @@ enum {
   CCMID_WL1,
   CCMID_WL2,
   CCMID_PRS1,
-  CCMID_OPETemp1,
-  CCMID_OPETemp2,
-  CCMID_OPETemp3,
-  CCMID_OPETemp4,
-  CCMID_OPETemp5,
-  CCMID_OPETemp6,
-  CCMID_OPETemp7,
-  CCMID_OPETemp8,
+  // CCMID_OPETemp1,
+  // CCMID_OPETemp2,
+  // CCMID_OPETemp3,
+  // CCMID_OPETemp4,
+  // CCMID_OPETemp5,
+  // CCMID_OPETemp6,
+  // CCMID_OPETemp7,
+  // CCMID_OPETemp8,
   CCMID_dummy,
 };
 
@@ -355,68 +340,68 @@ UECSCCM U_ccmList[U_MAX_CCM];
 
 const char ccmUnitTemp[] PROGMEM= "C";
 const char ccmNameTemp1[] PROGMEM= "T1温度";
-const char ccmTypeTemp1[] PROGMEM= "TCTemp.1";
+const char ccmTypeTemp1[] PROGMEM= "TCTemp1.mCD";
 const char ccmNameTemp2[] PROGMEM= "T2温度";
-const char ccmTypeTemp2[] PROGMEM= "TCTemp.2";
+const char ccmTypeTemp2[] PROGMEM= "TCTemp2.mCD";
 const char ccmNameTemp3[] PROGMEM= "T3温度";
-const char ccmTypeTemp3[] PROGMEM= "TCTemp.3";
+const char ccmTypeTemp3[] PROGMEM= "TCTemp3.mCD";
 const char ccmNameTemp4[] PROGMEM= "T4温度";
-const char ccmTypeTemp4[] PROGMEM= "TCTemp.4";
+const char ccmTypeTemp4[] PROGMEM= "TCTemp4.mCD";
 const char ccmNameTemp5[] PROGMEM= "T5温度";
-const char ccmTypeTemp5[] PROGMEM= "TCTemp.5";
+const char ccmTypeTemp5[] PROGMEM= "TCTemp5.mCD";
 const char ccmNameTemp6[] PROGMEM= "T6温度";
-const char ccmTypeTemp6[] PROGMEM= "TCTemp.6";
+const char ccmTypeTemp6[] PROGMEM= "TCTemp6.mCD";
 const char ccmNameTemp7[] PROGMEM= "T7温度";
-const char ccmTypeTemp7[] PROGMEM= "TCTemp.7";
+const char ccmTypeTemp7[] PROGMEM= "TCTemp7.mCD";
 const char ccmNameTemp8[] PROGMEM= "T8温度";
-const char ccmTypeTemp8[] PROGMEM= "TCTemp.8";
+const char ccmTypeTemp8[] PROGMEM= "TCTemp8.mCD";
 
-const char ccmUnitOpeTemp[] PROGMEM= "C";
-const char ccmNameOpeTemp1[] PROGMEM= "T1動作温度";
-const char ccmTypeOpeTemp1[] PROGMEM= "OPETemp.1";
-const char ccmNameOpeTemp2[] PROGMEM= "T2動作温度";
-const char ccmTypeOpeTemp2[] PROGMEM= "OPETemp.2";
-const char ccmNameOpeTemp3[] PROGMEM= "T3動作温度";
-const char ccmTypeOpeTemp3[] PROGMEM= "OPETemp.3";
-const char ccmNameOpeTemp4[] PROGMEM= "T4動作温度";
-const char ccmTypeOpeTemp4[] PROGMEM= "OPETemp.4";
-const char ccmNameOpeTemp5[] PROGMEM= "T5動作温度";
-const char ccmTypeOpeTemp5[] PROGMEM= "OPETemp.5";
-const char ccmNameOpeTemp6[] PROGMEM= "T6動作温度";
-const char ccmTypeOpeTemp6[] PROGMEM= "OPETemp.6";
-const char ccmNameOpeTemp7[] PROGMEM= "T7動作温度";
-const char ccmTypeOpeTemp7[] PROGMEM= "OPETemp.7";
-const char ccmNameOpeTemp8[] PROGMEM= "T8動作温度";
-const char ccmTypeOpeTemp8[] PROGMEM= "OPETemp.8";
+// const char ccmUnitOpeTemp[] PROGMEM= "C";
+// const char ccmNameOpeTemp1[] PROGMEM= "T1動作温度";
+// const char ccmTypeOpeTemp1[] PROGMEM= "OPETemp1.mCD";
+// const char ccmNameOpeTemp2[] PROGMEM= "T2動作温度";
+// const char ccmTypeOpeTemp2[] PROGMEM= "OPETemp2.mCD";
+// const char ccmNameOpeTemp3[] PROGMEM= "T3動作温度";
+// const char ccmTypeOpeTemp3[] PROGMEM= "OPETemp3.mCD";
+// const char ccmNameOpeTemp4[] PROGMEM= "T4動作温度";
+// const char ccmTypeOpeTemp4[] PROGMEM= "OPETemp4.mCD";
+// const char ccmNameOpeTemp5[] PROGMEM= "T5動作温度";
+// const char ccmTypeOpeTemp5[] PROGMEM= "OPETemp5.mCD";
+// const char ccmNameOpeTemp6[] PROGMEM= "T6動作温度";
+// const char ccmTypeOpeTemp6[] PROGMEM= "OPETemp6.mCD";
+// const char ccmNameOpeTemp7[] PROGMEM= "T7動作温度";
+// const char ccmTypeOpeTemp7[] PROGMEM= "OPETemp7.mCD";
+// const char ccmNameOpeTemp8[] PROGMEM= "T8動作温度";
+// const char ccmTypeOpeTemp8[] PROGMEM= "OPETemp8.mCD";
 
 const char ccmUnitCO2[] PROGMEM= "ppm";
 const char ccmNameCO2LP[] PROGMEM= "CO2LP";
-const char ccmTypeCO2LP[] PROGMEM= "CO2LP1";
+const char ccmTypeCO2LP[] PROGMEM= "CO2LP1.mCD";
 const char ccmNameCO2ICB[] PROGMEM= "CO2ICB";
-const char ccmTypeCO2ICB[] PROGMEM= "CO2ICB1";
+const char ccmTypeCO2ICB[] PROGMEM= "CO2ICB1.mCD";
 
 const char ccmNameWL1[] PROGMEM= "液面レベル1";
-const char ccmTypeWL1[] PROGMEM= "waterLvl.1";
+const char ccmTypeWL1[] PROGMEM= "waterLvl1.mCD";
 const char ccmNameWL2[] PROGMEM= "液面レベル2";
-const char ccmTypeWL2[] PROGMEM= "waterLvl.2";
+const char ccmTypeWL2[] PROGMEM= "waterLvl2.mCD";
 
 const char ccmNamePRS1[] PROGMEM= "圧力1";
-const char ccmTypePRS1[] PROGMEM= "AirPress.1";
+const char ccmTypePRS1[] PROGMEM= "AirPress1.mCD";
 
 const char ccmNameFUNC[] PROGMEM="FUNCSEL";
-const char ccmTypeFUNC[] PROGMEM="funcsel.mIC";
+const char ccmTypeFUNC[] PROGMEM="funcsel.mCD";
 const char ccmUnitFUNC[] PROGMEM= "";
 
 const char ccmNameBLOWER[] PROGMEM="ブロアー";
-const char ccmTypeBLOWER[] PROGMEM="blower.mIC";
+const char ccmTypeBLOWER[] PROGMEM="blower.mCD";
 const char ccmUnitBLOWER[] PROGMEM= "";
 
 const char ccmNamePUMP[] PROGMEM="ポンプ";
-const char ccmTypePUMP[] PROGMEM="pump.mIC";
+const char ccmTypePUMP[] PROGMEM="pump.mCD";
 const char ccmUnitPUMP[] PROGMEM= "";
 
 const char ccmNameCnd[] PROGMEM= "NodeCondition";
-const char ccmTypeCnd[] PROGMEM= "cnd.mIC";
+const char ccmTypeCnd[] PROGMEM= "cnd.mCD";
 const char ccmUnitCnd[] PROGMEM= "";
 
 
@@ -450,27 +435,29 @@ void UserInit(){
   UECSsetCCM(true, CCMID_WL1,     ccmNameWL1,   ccmTypeWL1,   NONES,       29, 0, A_10S_0);
   UECSsetCCM(true, CCMID_WL2,     ccmNameWL2,   ccmTypeWL2,   NONES,       29, 0, A_10S_0);
   UECSsetCCM(true, CCMID_PRS1,    ccmNamePRS1,  ccmTypePRS1,  NONES,       29, 0, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp1,ccmNameOpeTemp1, ccmTypeOpeTemp1, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp2,ccmNameOpeTemp2, ccmTypeOpeTemp2, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp3,ccmNameOpeTemp3, ccmTypeOpeTemp3, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp4,ccmNameOpeTemp4, ccmTypeOpeTemp4, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp5,ccmNameOpeTemp5, ccmTypeOpeTemp5, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp6,ccmNameOpeTemp6, ccmTypeOpeTemp6, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp7,ccmNameOpeTemp7, ccmTypeOpeTemp7, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  UECSsetCCM(true, CCMID_OPETemp8,ccmNameOpeTemp8, ccmTypeOpeTemp8, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  // UECSsetCCM(true, CCMID_OPETemp1,ccmNameOpeTemp1, ccmTypeOpeTemp1, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  // UECSsetCCM(true, CCMID_OPETemp2,ccmNameOpeTemp2, ccmTypeOpeTemp2, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  // UECSsetCCM(true, CCMID_OPETemp3,ccmNameOpeTemp3, ccmTypeOpeTemp3, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  // UECSsetCCM(true, CCMID_OPETemp4,ccmNameOpeTemp4, ccmTypeOpeTemp4, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  // UECSsetCCM(true, CCMID_OPETemp5,ccmNameOpeTemp5, ccmTypeOpeTemp5, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  // UECSsetCCM(true, CCMID_OPETemp6,ccmNameOpeTemp6, ccmTypeOpeTemp6, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  // UECSsetCCM(true, CCMID_OPETemp7,ccmNameOpeTemp7, ccmTypeOpeTemp7, ccmUnitOpeTemp, 29, 1, A_10S_0);
+  // UECSsetCCM(true, CCMID_OPETemp8,ccmNameOpeTemp8, ccmTypeOpeTemp8, ccmUnitOpeTemp, 29, 1, A_10S_0);
 }
 
 
 void OnWebFormRecieved() {
-  U_ccmList[CCMID_OPETemp1].value=setVCTval[0];
-  U_ccmList[CCMID_OPETemp2].value=setVCTval[1];
-  U_ccmList[CCMID_OPETemp3].value=setVCTval[2];
-  U_ccmList[CCMID_OPETemp4].value=setVCTval[3];
-  U_ccmList[CCMID_OPETemp5].value=setVCTval[4];
-  U_ccmList[CCMID_OPETemp6].value=setVCTval[5];
-  U_ccmList[CCMID_OPETemp7].value=setVCTval[6];
-  U_ccmList[CCMID_OPETemp8].value=setVCTval[7];
-  ChangeThermostat();
+  U_ccmList[CCMID_BLOWER].value  = statusMOTO_ON_OFF_AUTO[0];
+  U_ccmList[CCMID_PUMP].value  = statusMOTO_ON_OFF_AUTO[1];
+  // U_ccmList[CCMID_OPETemp1].value=setVCTval[0];
+  // U_ccmList[CCMID_OPETemp2].value=setVCTval[1];
+  // U_ccmList[CCMID_OPETemp3].value=setVCTval[2];
+  // U_ccmList[CCMID_OPETemp4].value=setVCTval[3];
+  // U_ccmList[CCMID_OPETemp5].value=setVCTval[4];
+  // U_ccmList[CCMID_OPETemp6].value=setVCTval[5];
+  // U_ccmList[CCMID_OPETemp7].value=setVCTval[6];
+  // U_ccmList[CCMID_OPETemp8].value=setVCTval[7];
+  ChangeValve();
  
 }
 
@@ -512,7 +499,7 @@ void loop(){
    U_ccmList[CCMID_BLOWER].value = 2; // STOP
     statusMOTO_ON_OFF_AUTO[0] = 2;
   } 
-  ChangeThermostat();
+  ChangeValve();
 }
 
 void setup(){
@@ -521,8 +508,6 @@ void setup(){
   //  megaEtherSS = 53; // SS is pin 53
   UECSsetup();
   pinMode(A2,INPUT);
-  U_ccmList[CCMID_OPETemp1].value=setVCTval[0];
-  U_ccmList[CCMID_TCTemp1].validity = true;
   for (i=0;i<8;i++) {
     VLVStatus[i] = 1;
   }
@@ -555,183 +540,175 @@ void setup(){
   lcd.print(lcdtitle);
   sprintf(lcdtext,"%d.%d.%d.%d",U_orgAttribute.ip[0],U_orgAttribute.ip[1],U_orgAttribute.ip[2],U_orgAttribute.ip[3]);
   lcd.setCursor(0,1);
-  lcd.print(lcdtext);
+  lcd.print(Ethernet.localIP());
+  //  lcd.print(lcdtext);
 }
 
 //---------------------------------------------------------
 //バルブ動作を変化させる関数
 //---------------------------------------------------------
-void ChangeThermostat(){
-  t1tValue[0] = U_ccmList[CCMID_TCTemp1].value;
-  t1tValue[1] = U_ccmList[CCMID_TCTemp2].value;
-  t1tValue[2] = U_ccmList[CCMID_TCTemp3].value;
-  t1tValue[3] = U_ccmList[CCMID_TCTemp4].value;
-  t1tValue[4] = U_ccmList[CCMID_TCTemp5].value;
-  t1tValue[5] = U_ccmList[CCMID_TCTemp6].value;
-  t1tValue[6] = U_ccmList[CCMID_TCTemp7].value;
-  t1tValue[7] = U_ccmList[CCMID_TCTemp8].value;
+void ChangeValve(){
+  switch(U_ccmList[CCMID_BLOWER].value) {
+  case 1: //MOTO_RUN
+    run_blower();
+    break;
+  case 2: //MOTO_STOP
+    stop_blower();
+    break;
+  }
+  switch(U_ccmList[CCMID_PUMP].value) {
+  case 1: //MOTO_RUN
+    run_pump();
+    break;
+  case 2: //MOTO_STOP
+    stop_pump();
+    break;
+  }
+  // t1tValue[0] = U_ccmList[CCMID_TCTemp1].value;
+  // t1tValue[1] = U_ccmList[CCMID_TCTemp2].value;
+  // t1tValue[2] = U_ccmList[CCMID_TCTemp3].value;
+  // t1tValue[3] = U_ccmList[CCMID_TCTemp4].value;
+  // t1tValue[4] = U_ccmList[CCMID_TCTemp5].value;
+  // t1tValue[5] = U_ccmList[CCMID_TCTemp6].value;
+  // t1tValue[6] = U_ccmList[CCMID_TCTemp7].value;
+  // t1tValue[7] = U_ccmList[CCMID_TCTemp8].value;
 
   switch(set_VLV_SELECT[0]) {
   case 0:
-    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    if (U_ccmList[CCMID_TCTemp1].validity) {
+      // if (U_ccmList[CCMID_TCTemp1].value<U_ccmList[CCMID_OPETemp1].value) {
+      // 	U_ccmList[CCMID_cnd].value=1;  //Auto ON
+      // 	break;
+      // }
+    }
+    //    U_ccmList[CCMID_cnd].value=0;  // Auto
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value=1;  //Manual ON
+    U_ccmList[CCMID_cnd].value=0;  // CLOSE
+    digitalWrite(D_VLV1_NORM,LOW);
+    digitalWrite(D_VLV1_REV,HIGH);
     break;
   case 2:
-    if (U_ccmList[CCMID_TCTemp1].validity) {
-      if (U_ccmList[CCMID_TCTemp1].value<U_ccmList[CCMID_OPETemp1].value) {
-	U_ccmList[CCMID_cnd].value=1;  //Auto ON
-	break;
-      }
-    }
-    U_ccmList[CCMID_cnd].value=0;  //Auto OFF
+    U_ccmList[CCMID_cnd].value=1;  // OPEN
+    digitalWrite(D_VLV1_NORM,HIGH);
+    digitalWrite(D_VLV1_REV,LOW);
     break;
   }
   switch(set_VLV_SELECT[1]) {
   case 0:
-    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    //    U_ccmList[CCMID_cnd].value=0;  // AUTO
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value=1;  //Manual ON
+    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111111101;  // CLOSE
+    digitalWrite(D_VLV2_NORM,LOW);
+    digitalWrite(D_VLV2_REV,HIGH);
     break;
   case 2:
-    if (U_ccmList[CCMID_TCTemp2].validity) {
-      if (U_ccmList[CCMID_TCTemp2].value<U_ccmList[CCMID_OPETemp2].value) {
-	U_ccmList[CCMID_cnd].value=1;  //Auto ON
-	break;
-      }
-    }
-    U_ccmList[CCMID_cnd].value=0;  //Auto OFF
+    U_ccmList[CCMID_cnd].value |= 0b10;  // OPEN
+    digitalWrite(D_VLV2_NORM,HIGH);
+    digitalWrite(D_VLV2_REV,LOW);
     break;
   }
   switch(set_VLV_SELECT[2]) {
   case 0:
-    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value=1;  //Manual ON
+    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111111011;  // CLOSE
+    digitalWrite(D_VLV3_NORM,LOW);
+    digitalWrite(D_VLV3_REV,HIGH);
     break;
   case 2:
-    if (U_ccmList[CCMID_TCTemp3].validity) {
-      if (U_ccmList[CCMID_TCTemp3].value<U_ccmList[CCMID_OPETemp3].value) {
-	U_ccmList[CCMID_cnd].value=1;  //Auto ON
-	break;
-      }
-    }
-    U_ccmList[CCMID_cnd].value=0;  //Auto OFF
+    U_ccmList[CCMID_cnd].value |= 0b100;  // OPEN
+    digitalWrite(D_VLV3_NORM,HIGH);
+    digitalWrite(D_VLV3_REV,LOW);
     break;
   }
   switch(set_VLV_SELECT[3]) {
   case 0:
-    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value=1;  //Manual ON
+    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111110111;  // CLOSE
+    digitalWrite(D_VLV4_NORM,LOW);
+    digitalWrite(D_VLV4_REV,HIGH);
     break;
   case 2:
-    if (U_ccmList[CCMID_TCTemp4].validity) {
-      if (U_ccmList[CCMID_TCTemp4].value<U_ccmList[CCMID_OPETemp4].value) {
-	U_ccmList[CCMID_cnd].value=1;  //Auto ON
-	break;
-      }
-    }
-    U_ccmList[CCMID_cnd].value=0;  //Auto OFF
+    U_ccmList[CCMID_cnd].value |= 0b1000;  // OPEN
+    digitalWrite(D_VLV4_NORM,HIGH);
+    digitalWrite(D_VLV4_REV,LOW);
     break;
   }
   switch(set_VLV_SELECT[4]) {
   case 0:
-    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value=1;  //Manual ON
+    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111101111;  // CLOSE
+    digitalWrite(D_VLV5_NORM,LOW);
+    digitalWrite(D_VLV5_REV,HIGH);
     break;
   case 2:
-    if (U_ccmList[CCMID_TCTemp5].validity) {
-      if (U_ccmList[CCMID_TCTemp5].value<U_ccmList[CCMID_OPETemp5].value) {
-	U_ccmList[CCMID_cnd].value=1;  //Auto ON
-	break;
-      }
-    }
-    U_ccmList[CCMID_cnd].value=0;  //Auto OFF
+    U_ccmList[CCMID_cnd].value |= 0b10000;  // OPEN
+    digitalWrite(D_VLV5_NORM,HIGH);
+    digitalWrite(D_VLV5_REV,LOW);
     break;
   }
   switch(set_VLV_SELECT[5]) {
   case 0:
-    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value=1;  //Manual ON
+    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111011111;  // CLOSE
+    digitalWrite(D_VLV6_NORM,LOW);
+    digitalWrite(D_VLV6_REV,HIGH);
     break;
   case 2:
-    if (U_ccmList[CCMID_TCTemp6].validity) {
-      if (U_ccmList[CCMID_TCTemp6].value<U_ccmList[CCMID_OPETemp6].value) {
-	U_ccmList[CCMID_cnd].value=1;  //Auto ON
-	break;
-      }
-    }
-    U_ccmList[CCMID_cnd].value=0;  //Auto OFF
+    U_ccmList[CCMID_cnd].value |= 0b100000;  // OPEN
+    digitalWrite(D_VLV6_NORM,HIGH);
+    digitalWrite(D_VLV6_REV,LOW);
     break;
   }
   switch(set_VLV_SELECT[6]) {
   case 0:
-    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value=1;  //Manual ON
+    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111110111111;  // CLOSE
+    digitalWrite(D_VLV7_NORM,LOW);
+    digitalWrite(D_VLV7_REV,HIGH);
     break;
   case 2:
-    if (U_ccmList[CCMID_TCTemp7].validity) {
-      if (U_ccmList[CCMID_TCTemp7].value<U_ccmList[CCMID_OPETemp7].value) {
-	U_ccmList[CCMID_cnd].value=1;  //Auto ON
-	break;
-      }
-    }
-    U_ccmList[CCMID_cnd].value=0;  //Auto OFF
+    U_ccmList[CCMID_cnd].value |= 0b1000000;  // OPEN
+    digitalWrite(D_VLV7_NORM,HIGH);
+    digitalWrite(D_VLV7_REV,LOW);
     break;
   }
-  switch(set_VLV_SELECT[7]) {
-  case 0:
-    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
-    break;
-  case 1:
-    U_ccmList[CCMID_cnd].value=1;  //Manual ON
-    break;
-  case 2:
-    if (U_ccmList[CCMID_TCTemp8].validity) {
-      if (U_ccmList[CCMID_TCTemp8].value<U_ccmList[CCMID_OPETemp8].value) {
-	U_ccmList[CCMID_cnd].value=1;  //Auto ON
-	break;
-      }
-    }
-    U_ccmList[CCMID_cnd].value=0;  //Auto OFF
-    break;
-  }
-  //サーモスタット動作 
-  // if(setONOFFAUTO==0) {
-  //   U_ccmList[CCMID_cnd].value=0;  //Manual OFF
-  // } else if(setONOFFAUTO==1) {
-  //   U_ccmList[CCMID_cnd].value=1;  //Manual ON
-  // } else if(setONOFFAUTO==2 && U_ccmList[CCMID_TCTemp].validity
-  // 	    && U_ccmList[CCMID_TCTemp].value<U_ccmList[CCMID_OPETemp].value) {
-  //   U_ccmList[CCMID_cnd].value=1;  //Auto ON
-  // } else {
-  //   U_ccmList[CCMID_cnd].value=0;  //OFF
+  // switch(set_VLV_SELECT[7]) {
+  // case 0:
+  //   //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+  //   break;
+  // case 1:
+  //   U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111101111111;  // CLOSE
+  //   digitalWrite(D_VLV8_NORM,LOW);
+  //   digitalWrite(D_VLV8_REV,HIGH);
+  //   break;
+  // case 2:
+  //   U_ccmList[CCMID_cnd].value |= 0b10000000;  // OPEN
+  //   digitalWrite(D_VLV8_NORM,HIGH);
+  //   digitalWrite(D_VLV8_REV,LOW);
+  //   break;
   // }
   VLVStatus[0] = U_ccmList[CCMID_cnd].value;
-  //if (VLVStatus[0]==1) {
-  //    digitalWrite(BLOWER,LOW);
-  //  } else {
-  //    digitalWrite(BLOWER,HIGH);
-  //  }
+
 }
 
 void run_blower(void) {
-  digitalWrite(D_BLOWER,HIGH);
+  digitalWrite(BLOWER,HIGH);
 }
 
 void stop_blower(void) {
-  digitalWrite(D_BLOWER,LOW);
+  digitalWrite(BLOWER,LOW);
 }
 
 void run_pump(void) {
