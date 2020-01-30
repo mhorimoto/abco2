@@ -1,4 +1,4 @@
-/* 
+/*
 
   Calculation time for Sun-set and Sun-rise by Arduino
 
@@ -8,7 +8,7 @@
 
 */
 
-#include <Wire.h> 
+#include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
 LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars and 2 line display
@@ -16,7 +16,7 @@ LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x27 for a 16 chars
 #define  M_PI   3.14159265358979323846    // πの値
 #define DEG(a)  ((a) * 180 / M_PI)        // ラジアンを度に変換するマクロ
 #define RAD(a)  ((a) * M_PI /180)         // 度をラジアンに変換するマクロ
- 
+
 float t1;                                 // 日の入り時刻（単位：時）
 float t2;                                 // 日の入り時刻（単位：時）
 float tm;                                 // 南中時刻（単位：時）
@@ -34,7 +34,7 @@ void setup() {
   lcd.init();
   lcd.backlight();
 }
- 
+
 void loop() {
   int n;
   for (n = 0; n < 1; n++) {              // 日付連番 0から364日の範囲を計算
@@ -54,7 +54,7 @@ void loop() {
   lcd.print(t1,4);
   for (;;) {}                                  // ここで停止
 }
- 
+
 float SunRiseTime(float x, float y, int n) {   // 日の出時刻を求める関数
   float d, e, t;
   y = RAD(y);                                  // 緯度をラジアンに変換
@@ -64,7 +64,7 @@ float SunRiseTime(float x, float y, int n) {   // 日の出時刻を求める関
   t = DEG(acos( (sin(RAD(-0.899)) - sin(d) * sin(y)) / (cos(d) * cos(y)) ) );
   return ( -t + 180.0 - x + 135.0) / 15.0 - e; // 日の出時刻を返す
 }
- 
+
 float SunSetTime(float x, float y, int n) {    // 日の入り時刻を求める関数
   float d, e, t;
   y = RAD(y);                                  // 緯度をラジアンに変換
@@ -74,7 +74,7 @@ float SunSetTime(float x, float y, int n) {    // 日の入り時刻を求める
   t = DEG(acos( (sin(RAD(-0.899)) - sin(d) * sin(y)) / (cos(d) * cos(y)) ) );
   return ( t + 180.0 - x + 135.0) / 15.0 - e;  // 日の入り時刻を返す
 }
- 
+
 float dCalc(int n) {                           // 近似式で太陽赤緯を求める
   float d, w;
   w = (n + 0.5) * 2 * M_PI / 365;              // 日付をラジアンに変換
@@ -83,7 +83,7 @@ float dCalc(int n) {                           // 近似式で太陽赤緯を求
       + 3.7872 * sin(w) + 0.03250 * sin(2 * w) + 0.07187 * sin(3 * w);
   return RAD(d);                               // 赤緯を返す（単位はラジアン）
 }
- 
+
 float eCalc(int n) {                           // 近似式で均時差を求める
   float e, w;
   w = (n + 0.5) * 2 * M_PI / 365;              // 日付をラジアンに換算
@@ -99,7 +99,7 @@ unsigned long calc_0_days(int year, byte month, byte day) {
   unsigned long days;
   int daysinmonth_ruiseki[12] = {0,31,59,90,120,151,181,212,243,273,304,334};
 
-  year--;                               // 当年は含まず 
+  year--;                               // 当年は含まず
   days = (unsigned long)year * 365;
   days += year / 4;                     // 閏年の日数を足しこむ
   days -= year/100;                     // 閏年で無い日数を差し引く

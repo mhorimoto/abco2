@@ -23,7 +23,7 @@
 #include <Adafruit_MCP9600.h>
 #include "abco2.h"
 
-const char *VERSION = "U0015";
+const char *VERSION = "U0023";
 
 /////////////////////////////////////
 // Hardware Define
@@ -258,10 +258,37 @@ unsigned long a2in;
 const char NONES[] PROGMEM= "";
 const char** DUMMY = NULL;
 
+// 自動モードと手動モードの切り替え
+const char MODESEL[] PROGMEM="運転モード";
+const char MODEAUTO[] PROGMEM="自動";
+const char MODEMANU[] PROGMEM="手動";
+const char MODE0[] PROGMEM="MODE-0";
+const char MODE1[] PROGMEM="MODE-1";
+const char MODE2[] PROGMEM="MODE-2";
+const char MODE3[] PROGMEM="MODE-3";
+const char MODE4[] PROGMEM="MODE-4";
+const char MODE5[] PROGMEM="MODE-5";
+const char MODE6[] PROGMEM="MODE-6";
+const char MODE7[] PROGMEM="MODE-7";
+const char *StrMODE[10] = {
+  MODEAUTO,
+  MODEMANU,
+  MODE0,
+  MODE1,
+  MODE2,
+  MODE3,
+  MODE4,
+  MODE5,
+  MODE6,
+  MODE7
+};
+signed long modeRUN;
+
 //表示素材の登録
 const int U_HtmlLine = 26; //Total number of HTML table rows.
 struct UECSUserHtml U_html[U_HtmlLine]={
   //{名前,入出力形式	,単位 ,詳細説明,選択肢文字列	,選択肢数,値	,最小値,最大値,小数桁数}
+  {MODESEL,   UECSSELECTDATA, NONES, VLVNOTE0,   StrMODE,  10,&(modeRUN), 0,0,0},
   {MOTONAME0, UECSSELECTDATA, NONES, VLVNOTE0,   StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[0]),0,0,0},
   {MOTONAME1, UECSSELECTDATA, NONES, VLVNOTE0,   StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[1]),0,0,0},
   {VLVNAME0,UECSSELECTDATA,NONES,VLVNOTE0, StrVLV_SELECT,3, &(set_VLV_SELECT[0]), 0, 0, 0},
@@ -271,7 +298,6 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   {VLVNAME4,UECSSELECTDATA,NONES,VLVNOTE4, StrVLV_SELECT,3, &(set_VLV_SELECT[4]), 0, 0, 0},
   {VLVNAME5,UECSSELECTDATA,NONES,VLVNOTE5, StrVLV_SELECT,3, &(set_VLV_SELECT[5]), 0, 0, 0},
   {VLVNAME6,UECSSELECTDATA,NONES,VLVNOTE6, StrVLV_SELECT,3, &(set_VLV_SELECT[6]), 0, 0, 0},
-  {VLVNAME7,UECSSELECTDATA,NONES,VLVNOTE7, StrVLV_SELECT,3, &(set_VLV_SELECT[7]), 0, 0, 0},
   {FUNCSEL,   UECSSHOWDATA,   NONES, NONES,      DUMMY,    0,&(a2in),     0, 0, 0}, // #10
   {T1TEMP0, UECSSHOWDATA, TempUNIT, T1NOTE0, DUMMY, 0,&(t1tValue[0])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP1, UECSSHOWDATA, TempUNIT, T1NOTE1, DUMMY, 0,&(t1tValue[1])	, 0, 0, T1T_DECIMAL_DIGIT},
@@ -416,7 +442,7 @@ void UserInit(){
   U_orgAttribute.mac[3] = EEPROM.read(4090+3); // 0x8f;
   U_orgAttribute.mac[4] = EEPROM.read(4090+4); // 0x00;
   U_orgAttribute.mac[5] = EEPROM.read(4090+5); // 0x01;
-  
+
   //Set ccm list
   UECSsetCCM(true, CCMID_cnd   ,  ccmNameCnd ,  ccmTypeCnd ,  ccmUnitCnd , 29, 0, A_1S_0);
   UECSsetCCM(true, CCMID_FUNCSEL, ccmNameFUNC,  ccmTypeFUNC,  ccmUnitFUNC, 29, 0, A_1S_0);
@@ -449,16 +475,7 @@ void UserInit(){
 void OnWebFormRecieved() {
   U_ccmList[CCMID_BLOWER].value  = statusMOTO_ON_OFF_AUTO[0];
   U_ccmList[CCMID_PUMP].value  = statusMOTO_ON_OFF_AUTO[1];
-  // U_ccmList[CCMID_OPETemp1].value=setVCTval[0];
-  // U_ccmList[CCMID_OPETemp2].value=setVCTval[1];
-  // U_ccmList[CCMID_OPETemp3].value=setVCTval[2];
-  // U_ccmList[CCMID_OPETemp4].value=setVCTval[3];
-  // U_ccmList[CCMID_OPETemp5].value=setVCTval[4];
-  // U_ccmList[CCMID_OPETemp6].value=setVCTval[5];
-  // U_ccmList[CCMID_OPETemp7].value=setVCTval[6];
-  // U_ccmList[CCMID_OPETemp8].value=setVCTval[7];
   ChangeValve();
- 
 }
 
 void UserEverySecond() {
@@ -468,11 +485,18 @@ void UserEveryMinute() {
 void UserEveryLoop() {
 }
 
+/////////////////////////////////////////////////////
+// LOOP MAIN ROUTINE
+/////////////////////////////////////////////////////
 void loop(){
   int rc,co2lp,co2icb;
+  int mcp_id;
+  float temp;
   UECSloop();
+  if (digitalRead(EMGSTOP)==LOW) emgstop(); // 緊急停止の確認　割り込みが効かないのでここに入れる。
   a2in = analogRead(A2);
   U_ccmList[CCMID_FUNCSEL].value= a2in;
+  disp_select(a2in);
   k33_ope();
   if (digitalRead(PRSLVL1)==HIGH) {
     ShowPressLevel[0] = 0; // HIGH
@@ -498,7 +522,12 @@ void loop(){
   } else {
    U_ccmList[CCMID_BLOWER].value = 2; // STOP
     statusMOTO_ON_OFF_AUTO[0] = 2;
-  } 
+  }
+  for(mcp_id=0;mcp_id<8;mcp_id++) {
+    temp = mcp[mcp_id].readThermocouple();
+    t1tValue[mcp_id] = temp * 10.0;
+    U_ccmList[CCMID_TCTemp1+mcp_id].value = temp * 10.0;
+  }
   ChangeValve();
 }
 
@@ -542,6 +571,7 @@ void setup(){
   lcd.setCursor(0,1);
   lcd.print(Ethernet.localIP());
   //  lcd.print(lcdtext);
+  //  attachInterrupt(0, emgstop, FALLING); // 緊急停止
 }
 
 //---------------------------------------------------------
@@ -550,28 +580,24 @@ void setup(){
 void ChangeValve(){
   switch(U_ccmList[CCMID_BLOWER].value) {
   case 1: //MOTO_RUN
+    U_ccmList[CCMID_cnd].value |= 0b100000000;  // RUN
     run_blower();
     break;
   case 2: //MOTO_STOP
+    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111011111111;  // STOP
     stop_blower();
     break;
   }
   switch(U_ccmList[CCMID_PUMP].value) {
   case 1: //MOTO_RUN
+    U_ccmList[CCMID_cnd].value |= 0b10000000;  // RUN
     run_pump();
     break;
   case 2: //MOTO_STOP
+    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111101111111;  // STOP
     stop_pump();
     break;
   }
-  // t1tValue[0] = U_ccmList[CCMID_TCTemp1].value;
-  // t1tValue[1] = U_ccmList[CCMID_TCTemp2].value;
-  // t1tValue[2] = U_ccmList[CCMID_TCTemp3].value;
-  // t1tValue[3] = U_ccmList[CCMID_TCTemp4].value;
-  // t1tValue[4] = U_ccmList[CCMID_TCTemp5].value;
-  // t1tValue[5] = U_ccmList[CCMID_TCTemp6].value;
-  // t1tValue[6] = U_ccmList[CCMID_TCTemp7].value;
-  // t1tValue[7] = U_ccmList[CCMID_TCTemp8].value;
 
   switch(set_VLV_SELECT[0]) {
   case 0:
@@ -581,10 +607,11 @@ void ChangeValve(){
       // 	break;
       // }
     }
-    //    U_ccmList[CCMID_cnd].value=0;  // Auto
+    digitalWrite(D_VLV1_NORM,LOW);
+    digitalWrite(D_VLV1_REV,LOW);
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value=0;  // CLOSE
+    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111111110;  // CLOSE
     digitalWrite(D_VLV1_NORM,LOW);
     digitalWrite(D_VLV1_REV,HIGH);
     break;
@@ -596,7 +623,8 @@ void ChangeValve(){
   }
   switch(set_VLV_SELECT[1]) {
   case 0:
-    //    U_ccmList[CCMID_cnd].value=0;  // AUTO
+    digitalWrite(D_VLV2_NORM,LOW);
+    digitalWrite(D_VLV2_REV,LOW);
     break;
   case 1:
     U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111111101;  // CLOSE
@@ -611,7 +639,8 @@ void ChangeValve(){
   }
   switch(set_VLV_SELECT[2]) {
   case 0:
-    //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    digitalWrite(D_VLV3_NORM,LOW);
+    digitalWrite(D_VLV3_REV,LOW);
     break;
   case 1:
     U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111111011;  // CLOSE
@@ -626,7 +655,8 @@ void ChangeValve(){
   }
   switch(set_VLV_SELECT[3]) {
   case 0:
-    //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    digitalWrite(D_VLV4_NORM,LOW);
+    digitalWrite(D_VLV4_REV,LOW);
     break;
   case 1:
     U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111110111;  // CLOSE
@@ -641,7 +671,8 @@ void ChangeValve(){
   }
   switch(set_VLV_SELECT[4]) {
   case 0:
-    //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    digitalWrite(D_VLV5_NORM,LOW);
+    digitalWrite(D_VLV5_REV,LOW);
     break;
   case 1:
     U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111101111;  // CLOSE
@@ -656,7 +687,8 @@ void ChangeValve(){
   }
   switch(set_VLV_SELECT[5]) {
   case 0:
-    //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    digitalWrite(D_VLV6_NORM,LOW);
+    digitalWrite(D_VLV6_REV,LOW);
     break;
   case 1:
     U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111011111;  // CLOSE
@@ -671,7 +703,8 @@ void ChangeValve(){
   }
   switch(set_VLV_SELECT[6]) {
   case 0:
-    //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
+    digitalWrite(D_VLV7_NORM,LOW);
+    digitalWrite(D_VLV7_REV,LOW);
     break;
   case 1:
     U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111110111111;  // CLOSE
@@ -684,21 +717,6 @@ void ChangeValve(){
     digitalWrite(D_VLV7_REV,LOW);
     break;
   }
-  // switch(set_VLV_SELECT[7]) {
-  // case 0:
-  //   //    U_ccmList[CCMID_cnd].value=0;  //Manual OFF
-  //   break;
-  // case 1:
-  //   U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111101111111;  // CLOSE
-  //   digitalWrite(D_VLV8_NORM,LOW);
-  //   digitalWrite(D_VLV8_REV,HIGH);
-  //   break;
-  // case 2:
-  //   U_ccmList[CCMID_cnd].value |= 0b10000000;  // OPEN
-  //   digitalWrite(D_VLV8_NORM,HIGH);
-  //   digitalWrite(D_VLV8_REV,LOW);
-  //   break;
-  // }
   VLVStatus[0] = U_ccmList[CCMID_cnd].value;
 
 }
@@ -724,4 +742,49 @@ void Reset_lcdtext(void) {
   for(i=0;i<17;i++) {
     lcdtext[i] = (char)NULL;
   }
+}
+
+void emgstop(void) {
+  lcd.setCursor(0,1);
+  Reset_lcdtext();
+  lcd.print(lcdtext);
+  lcd.setCursor(0,1);
+  lcd.print("EMG STOP");
+  stop_blower();
+  stop_pump();
+  delay(500);
+  if (digitalRead(EMGSTOP)==HIGH) {
+    lcd.setCursor(0,1);
+    lcd.print("EMG ABANDAN");
+    return;
+  }
+  lcd.print("BLOWER/PUMP STOP");
+  // VLV1 CLOSE
+  digitalWrite(D_VLV1_NORM,LOW);
+  digitalWrite(D_VLV1_REV,HIGH);
+  // VLV2 CLOSE
+  digitalWrite(D_VLV2_NORM,LOW);
+  digitalWrite(D_VLV2_REV,HIGH);
+  // VLV3 CLOSE
+  digitalWrite(D_VLV3_NORM,LOW);
+  digitalWrite(D_VLV3_REV,HIGH);
+  // VLV4 OPEN
+  U_ccmList[CCMID_cnd].value |= 0b1000;  // OPEN
+  digitalWrite(D_VLV4_NORM,HIGH);
+  digitalWrite(D_VLV4_REV,LOW);
+  // VLV5 OPEN
+  U_ccmList[CCMID_cnd].value |= 0b10000;  // OPEN
+  digitalWrite(D_VLV5_NORM,HIGH);
+  digitalWrite(D_VLV5_REV,LOW);
+  // VLV6 OPEN
+  U_ccmList[CCMID_cnd].value |= 0b100000;  // OPEN
+  digitalWrite(D_VLV6_NORM,HIGH);
+  digitalWrite(D_VLV6_REV,LOW);
+  // VLV7 CLOSE
+  digitalWrite(D_VLV7_NORM,LOW);
+  digitalWrite(D_VLV7_REV,HIGH);
+  // setting cnd flag
+  U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111000111000;  // MOTORT and VALVE
+  U_ccmList[CCMID_cnd].value |= 0b01000000000000000000000000000000;  // EMERGENCY STOP
+  delay(2000);
 }
