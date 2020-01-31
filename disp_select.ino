@@ -1,6 +1,8 @@
 void disp_select(int menusel) {
   int smenu;
   int pday,psec;
+  extern char *StrMODE[];
+  
   smenu = (menusel/100)+1;
   //Serial.begin(115200);
   //Serial.println(smenu);
@@ -20,6 +22,11 @@ void disp_select(int menusel) {
       lcd.setCursor(0,1);
       lcd.print(lcdtext);
     }
+  } else if ((smenu>=4) and (smenu<=6)) {
+    Reset_lcdtext();
+    lcd.setCursor(0,1);
+    sprintf(lcdtext,"%16s",StrMODE[3]);
+    lcd.print(lcdtext);
   } else {
     //Serial.println("Default");
     lcd.setCursor(0,0);

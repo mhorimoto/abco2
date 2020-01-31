@@ -23,7 +23,7 @@
 #include <Adafruit_MCP9600.h>
 #include "abco2.h"
 
-const char *VERSION = "U0028";
+const char *VERSION = "U0032";
 
 /////////////////////////////////////
 // Hardware Define
@@ -120,6 +120,28 @@ const char *StrPRESS_LVL[2] = {
 boolean pressLevel;          // I/Oから信号を受電するため
 signed long ShowPressLevel[2];  // 表示のインデックスのため
 
+
+// バーナー
+// H/Lの二者択一。UECSSHOWSTRING で表示する。
+const char BURNER_STATUS[] PROGMEM = "バーナー運転";
+const char BURNER_FIRE[] PROGMEM = "バーナー火状態";
+const char BURNER_RUN[] PROGMEM = "運転";
+const char BURNER_STOP[] PROGMEM  = "停止";
+const char *StrBURNER[2] = {
+  BURNER_STOP,
+  BURNER_RUN
+};
+boolean sts_burner;          // I/Oから信号を受電するため
+signed long ShowBurner;      // 表示のインデックスのため
+
+const char MISSFIRE[] PROGMEM = "失火";
+const char FIRE[] PROGMEM  = "正常";
+const char *StrMISSFIRE[2] = {
+  FIRE,
+  MISSFIRE
+};
+boolean sts_fire;          // I/Oから信号を受電するため
+signed long ShowMissfire;  // 表示のインデックスのため
 
 // CO2センサ
 // センサの値は設定しないので UECSSHOWDATAで表示する。
@@ -254,6 +276,7 @@ signed long statusMOTO_ON_OFF_AUTO[2];
 const char FUNCSEL[] PROGMEM = "FUNCSEL";
 unsigned long a2in;
 
+
 //●ダミー素材の定義
 //dummy value
 const char NONES[] PROGMEM= "";
@@ -272,21 +295,21 @@ const char MODE5[] PROGMEM="MODE-5";
 const char MODE6[] PROGMEM="MODE-6";
 const char MODE7[] PROGMEM="MODE-7";
 const char *StrMODE[10] = {
-  MODEAUTO,
-  MODEMANU,
-  MODE0,
-  MODE1,
-  MODE2,
-  MODE3,
-  MODE4,
-  MODE5,
-  MODE6,
-  MODE7
+  MODEAUTO,  //  0
+  MODEMANU,  //  1
+  MODE0,     //  2
+  MODE1,     //  3
+  MODE2,     //  4
+  MODE3,     //  5
+  MODE4,     //  6
+  MODE5,     //  7
+  MODE6,     //  8
+  MODE7      //  9
 };
 signed long modeRUN;
 
 //表示素材の登録
-const int U_HtmlLine = 26; //Total number of HTML table rows.
+const int U_HtmlLine = 30; //Total number of HTML table rows.
 struct UECSUserHtml U_html[U_HtmlLine]={
   //{名前,入出力形式	,単位 ,詳細説明,選択肢文字列	,選択肢数,値	,最小値,最大値,小数桁数}
   {MODESEL,   UECSSELECTDATA, NONES, VLVNOTE0,   StrMODE,  10,&(modeRUN), 0,0,0},
@@ -298,8 +321,8 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   {VLVNAME3,UECSSELECTDATA,NONES,VLVNOTE3, StrVLV_SELECT,3, &(set_VLV_SELECT[3]), 0, 0, 0},
   {VLVNAME4,UECSSELECTDATA,NONES,VLVNOTE4, StrVLV_SELECT,3, &(set_VLV_SELECT[4]), 0, 0, 0},
   {VLVNAME5,UECSSELECTDATA,NONES,VLVNOTE5, StrVLV_SELECT,3, &(set_VLV_SELECT[5]), 0, 0, 0},
-  {VLVNAME6,UECSSELECTDATA,NONES,VLVNOTE6, StrVLV_SELECT,3, &(set_VLV_SELECT[6]), 0, 0, 0},
-  {FUNCSEL,   UECSSHOWDATA,   NONES, NONES,      DUMMY,    0,&(a2in),     0, 0, 0}, // #10
+  {VLVNAME6,UECSSELECTDATA,NONES,VLVNOTE6, StrVLV_SELECT,3, &(set_VLV_SELECT[6]), 0, 0, 0}, // #10
+  {FUNCSEL,   UECSSHOWDATA,   NONES, NONES,      DUMMY,    0,&(a2in),     0, 0, 0},
   {T1TEMP0, UECSSHOWDATA, TempUNIT, T1NOTE0, DUMMY, 0,&(t1tValue[0])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP1, UECSSHOWDATA, TempUNIT, T1NOTE1, DUMMY, 0,&(t1tValue[1])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP2, UECSSHOWDATA, TempUNIT, T1NOTE2, DUMMY, 0,&(t1tValue[2])	, 0, 0, T1T_DECIMAL_DIGIT},
@@ -308,10 +331,14 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   {T1TEMP5, UECSSHOWDATA, TempUNIT, T1NOTE5, DUMMY, 0,&(t1tValue[5])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP6, UECSSHOWDATA, TempUNIT, T1NOTE6, DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT},
   {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {T1TEMP6, UECSSHOWDATA, TempUNIT, T1NOTE6, DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT}, // #20
+  {T1TEMP6, UECSSHOWDATA, TempUNIT, T1NOTE6, DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT}, // #20
+  {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT},
   {CO2NAME, UECSSHOWDATA, CO2UNIT,  CO2NOTE1,DUMMY, 0,&(co2detail), 0, 0, CO2_DIGIT},
   {CO2NAME, UECSSHOWDATA, CO2UNIT,  CO2NOTE2,DUMMY, 0,&(co2bigger), 0, 0, CO2_DIGIT},
+  {BURNER_STATUS,     UECSSHOWSTRING, NONES, NONES, StrBURNER,   2,&(ShowBurner),0,0,0},
+  {BURNER_FIRE,UECSSHOWSTRING, NONES, NONES, StrMISSFIRE, 2,&(ShowMissfire),0,0,0},
+  {WATER_LVL1, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[0]),0,0,0},
+  {WATER_LVL2, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[1]),0,0,0},
   {WATER_LVL1, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[0]),0,0,0},
   {WATER_LVL2, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[1]),0,0,0},
   {PRESS_LVL,  UECSSHOWSTRING, NONES, NONES, StrPRESS_LVL,2,&(ShowPressLevel[0]),0,0,0},
@@ -349,6 +376,8 @@ enum {
   CCMID_WL1,
   CCMID_WL2,
   CCMID_PRS1,
+  CCMID_MODE,
+  CCMID_BURNER,
   // CCMID_OPETemp1,
   // CCMID_OPETemp2,
   // CCMID_OPETemp3,
@@ -427,6 +456,14 @@ const char ccmNamePUMP[] PROGMEM="ポンプ";
 const char ccmTypePUMP[] PROGMEM="pump.mCD";
 const char ccmUnitPUMP[] PROGMEM= "";
 
+const char ccmNameBURNER[] PROGMEM="バーナー状態";
+const char ccmTypeBURNER[] PROGMEM="burner.mCD";
+const char ccmUnitBURNER[] PROGMEM= "";
+
+const char ccmNameMODE[] PROGMEM="Mode";
+const char ccmTypeMODE[] PROGMEM="mode.mCD";
+const char ccmUnitMODE[] PROGMEM= "";
+
 const char ccmNameCnd[] PROGMEM= "NodeCondition";
 const char ccmTypeCnd[] PROGMEM= "cnd.mCD";
 const char ccmUnitCnd[] PROGMEM= "";
@@ -446,6 +483,7 @@ void UserInit(){
 
   //Set ccm list
   UECSsetCCM(true, CCMID_cnd   ,  ccmNameCnd ,  ccmTypeCnd ,  ccmUnitCnd , 29, 0, A_1S_0);
+  UECSsetCCM(true, CCMID_MODE,    ccmNameMODE,  ccmTypeMODE,  ccmUnitMODE, 28, 0, A_1S_0);
   UECSsetCCM(true, CCMID_FUNCSEL, ccmNameFUNC,  ccmTypeFUNC,  ccmUnitFUNC, 29, 0, A_1S_0);
   UECSsetCCM(true, CCMID_BLOWER,  ccmNameBLOWER,ccmTypeBLOWER,ccmUnitBLOWER,29, 0, A_10S_0);
   UECSsetCCM(true, CCMID_PUMP,    ccmNamePUMP,  ccmTypePUMP,  ccmUnitPUMP, 29, 0, A_10S_0);
@@ -462,6 +500,7 @@ void UserInit(){
   UECSsetCCM(true, CCMID_WL1,     ccmNameWL1,   ccmTypeWL1,   NONES,       29, 0, A_10S_0);
   UECSsetCCM(true, CCMID_WL2,     ccmNameWL2,   ccmTypeWL2,   NONES,       29, 0, A_10S_0);
   UECSsetCCM(true, CCMID_PRS1,    ccmNamePRS1,  ccmTypePRS1,  NONES,       29, 0, A_10S_0);
+  UECSsetCCM(true, CCMID_BURNER,  ccmNameBURNER,ccmTypeBURNER,NONES,       29, 0, A_10S_0);
   // UECSsetCCM(true, CCMID_OPETemp1,ccmNameOpeTemp1, ccmTypeOpeTemp1, ccmUnitOpeTemp, 29, 1, A_10S_0);
   // UECSsetCCM(true, CCMID_OPETemp2,ccmNameOpeTemp2, ccmTypeOpeTemp2, ccmUnitOpeTemp, 29, 1, A_10S_0);
   // UECSsetCCM(true, CCMID_OPETemp3,ccmNameOpeTemp3, ccmTypeOpeTemp3, ccmUnitOpeTemp, 29, 1, A_10S_0);
@@ -475,7 +514,8 @@ void UserInit(){
 
 void OnWebFormRecieved() {
   U_ccmList[CCMID_BLOWER].value  = statusMOTO_ON_OFF_AUTO[0];
-  U_ccmList[CCMID_PUMP].value  = statusMOTO_ON_OFF_AUTO[1];
+  U_ccmList[CCMID_PUMP].value    = statusMOTO_ON_OFF_AUTO[1];
+  U_ccmList[CCMID_MODE].value    = modeRUN;
   ChangeValve();
 }
 
@@ -531,8 +571,15 @@ void loop(){
     U_ccmList[CCMID_PUMP].value = 2; // STOP
     statusMOTO_ON_OFF_AUTO[1] = 2;
   }
+  if (digitalRead(BURNER)==HIGH) {
+    U_ccmList[CCMID_BURNER].value = 0;
+    ShowBurner = 0; // STOP
+  } else {
+    U_ccmList[CCMID_BURNER].value = 1;
+    ShowBurner = 1; // RUN
+  } 
   for(mcp_id=0;mcp_id<8;mcp_id++) {
-    //    temp = mcp[mcp_id].readThermocouple();
+    temp = mcp[mcp_id].readThermocouple();
     t1tValue[mcp_id] = temp * 10.0;
     U_ccmList[CCMID_TCTemp1+mcp_id].value = temp * 10.0;
   }
@@ -586,6 +633,36 @@ void setup(){
 //バルブ動作を変化させる関数
 //---------------------------------------------------------
 void ChangeValve(){
+  switch(U_ccmList[CCMID_MODE].value) {
+  case 0:  // MODE AUTO
+    return;
+  case 1:  // MODE MANUAL
+    break;
+  case 2:  // MODE0:
+    setMode0();
+    return;
+  case 3:  // MODE1:
+    setMode1();
+    return;
+  case 4:  // MODE2:
+    setMode2();
+    return;
+  case 5:  // MODE3:
+    setMode3();
+    return;
+  case 6:  // MODE4:
+    setMode4();
+    return;
+  case 7:  // MODE5:
+    setMode5();
+    return;
+  case 8:  // MODE6:
+    setMode6();
+    return;
+  case 9:  // MODE7:
+    setMode7();
+    return;
+  }
   switch(U_ccmList[CCMID_BLOWER].value) {
   case 1: //MOTO_RUN
     run_blower();
@@ -736,3 +813,65 @@ void emgstop(void) {
   U_ccmList[CCMID_cnd].value |= 0b01000000000000000000000000000000;  // EMERGENCY STOP
   delay(2000);
 }
+
+void setMode0(void) {
+  vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV4_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV5_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
+  stop_blower();
+  stop_pump();
+}
+
+void setMode1(void) {
+  vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV2_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV4_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV5_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV6_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
+  run_blower();
+  run_pump();
+}
+
+void setMode2(void) {
+  vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV3_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV4_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV7_OPEN,CCMID_cnd);
+  run_blower();
+  stop_pump();
+}
+
+void setMode3(void) {
+  lcd.setCursor(0,1);
+  lcd.print("Mode3           ");
+}
+
+void setMode4(void) {
+  lcd.setCursor(0,1);
+  lcd.print("Mode4           ");
+}
+
+void setMode5(void) {
+  lcd.setCursor(0,1);
+  lcd.print("Mode5           ");
+}
+
+void setMode6(void) {
+  lcd.setCursor(0,1);
+  lcd.print("Mode6           ");
+}
+
+void setMode7(void) {
+  lcd.setCursor(0,1);
+  lcd.print("Mode7           ");
+}
+
