@@ -23,7 +23,7 @@
 #include <Adafruit_MCP9600.h>
 #include "abco2.h"
 
-const char *VERSION = "U0023";
+const char *VERSION = "U0028";
 
 /////////////////////////////////////
 // Hardware Define
@@ -38,6 +38,7 @@ K30_I2C          k33icb = K30_I2C(0x6a);
 AT24CX           atmem(7,32);
 Adafruit_MCP9600 mcp[8];
 int mcp96_addr[]={0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67};
+boolean mcp96_present[8];  // true:present, false:absent
 
 /////////////////////////////////////
 //IP reset jupmer pin setting
@@ -520,11 +521,18 @@ void loop(){
     U_ccmList[CCMID_BLOWER].value = 1; // RUN
     statusMOTO_ON_OFF_AUTO[0] = 1;
   } else {
-   U_ccmList[CCMID_BLOWER].value = 2; // STOP
+    U_ccmList[CCMID_BLOWER].value = 2; // STOP
     statusMOTO_ON_OFF_AUTO[0] = 2;
   }
+  if (digitalRead(PUMP)==HIGH) {
+    U_ccmList[CCMID_PUMP].value = 1; // RUN
+    statusMOTO_ON_OFF_AUTO[1] = 1;
+  } else {
+    U_ccmList[CCMID_PUMP].value = 2; // STOP
+    statusMOTO_ON_OFF_AUTO[1] = 2;
+  }
   for(mcp_id=0;mcp_id<8;mcp_id++) {
-    temp = mcp[mcp_id].readThermocouple();
+    //    temp = mcp[mcp_id].readThermocouple();
     t1tValue[mcp_id] = temp * 10.0;
     U_ccmList[CCMID_TCTemp1+mcp_id].value = temp * 10.0;
   }
@@ -541,7 +549,7 @@ void setup(){
     VLVStatus[i] = 1;
   }
   for (i=0;i<2;i++) {
-    statusMOTO_ON_OFF_AUTO[i] = 0;
+    statusMOTO_ON_OFF_AUTO[i] = MOTO_STOP;
   }
   pinMode(2,INPUT_PULLUP);
   pinMode(3,INPUT_PULLUP);
@@ -580,160 +588,118 @@ void setup(){
 void ChangeValve(){
   switch(U_ccmList[CCMID_BLOWER].value) {
   case 1: //MOTO_RUN
-    U_ccmList[CCMID_cnd].value |= 0b100000000;  // RUN
     run_blower();
     break;
   case 2: //MOTO_STOP
-    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111011111111;  // STOP
     stop_blower();
     break;
   }
   switch(U_ccmList[CCMID_PUMP].value) {
   case 1: //MOTO_RUN
-    U_ccmList[CCMID_cnd].value |= 0b10000000;  // RUN
     run_pump();
     break;
   case 2: //MOTO_STOP
-    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111101111111;  // STOP
     stop_pump();
     break;
   }
 
   switch(set_VLV_SELECT[0]) {
   case 0:
-    if (U_ccmList[CCMID_TCTemp1].validity) {
-      // if (U_ccmList[CCMID_TCTemp1].value<U_ccmList[CCMID_OPETemp1].value) {
-      // 	U_ccmList[CCMID_cnd].value=1;  //Auto ON
-      // 	break;
-      // }
-    }
-    digitalWrite(D_VLV1_NORM,LOW);
-    digitalWrite(D_VLV1_REV,LOW);
+    vlv_ctrl(VLV1_UNKNOWN,CCMID_cnd);
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111111110;  // CLOSE
-    digitalWrite(D_VLV1_NORM,LOW);
-    digitalWrite(D_VLV1_REV,HIGH);
+    vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
     break;
   case 2:
-    U_ccmList[CCMID_cnd].value=1;  // OPEN
-    digitalWrite(D_VLV1_NORM,HIGH);
-    digitalWrite(D_VLV1_REV,LOW);
+    vlv_ctrl(VLV1_OPEN,CCMID_cnd);
     break;
   }
   switch(set_VLV_SELECT[1]) {
   case 0:
-    digitalWrite(D_VLV2_NORM,LOW);
-    digitalWrite(D_VLV2_REV,LOW);
+    vlv_ctrl(VLV2_UNKNOWN,CCMID_cnd);
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111111101;  // CLOSE
-    digitalWrite(D_VLV2_NORM,LOW);
-    digitalWrite(D_VLV2_REV,HIGH);
+    vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
     break;
   case 2:
-    U_ccmList[CCMID_cnd].value |= 0b10;  // OPEN
-    digitalWrite(D_VLV2_NORM,HIGH);
-    digitalWrite(D_VLV2_REV,LOW);
+    vlv_ctrl(VLV2_OPEN,CCMID_cnd);
     break;
   }
   switch(set_VLV_SELECT[2]) {
   case 0:
-    digitalWrite(D_VLV3_NORM,LOW);
-    digitalWrite(D_VLV3_REV,LOW);
+    vlv_ctrl(VLV3_UNKNOWN,CCMID_cnd);
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111111011;  // CLOSE
-    digitalWrite(D_VLV3_NORM,LOW);
-    digitalWrite(D_VLV3_REV,HIGH);
+    vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
     break;
   case 2:
-    U_ccmList[CCMID_cnd].value |= 0b100;  // OPEN
-    digitalWrite(D_VLV3_NORM,HIGH);
-    digitalWrite(D_VLV3_REV,LOW);
+    vlv_ctrl(VLV3_OPEN,CCMID_cnd);
     break;
   }
   switch(set_VLV_SELECT[3]) {
   case 0:
-    digitalWrite(D_VLV4_NORM,LOW);
-    digitalWrite(D_VLV4_REV,LOW);
+    vlv_ctrl(VLV4_UNKNOWN,CCMID_cnd);
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111110111;  // CLOSE
-    digitalWrite(D_VLV4_NORM,LOW);
-    digitalWrite(D_VLV4_REV,HIGH);
+    vlv_ctrl(VLV4_CLOSE,CCMID_cnd);
     break;
   case 2:
-    U_ccmList[CCMID_cnd].value |= 0b1000;  // OPEN
-    digitalWrite(D_VLV4_NORM,HIGH);
-    digitalWrite(D_VLV4_REV,LOW);
+    vlv_ctrl(VLV4_OPEN,CCMID_cnd);
     break;
   }
   switch(set_VLV_SELECT[4]) {
   case 0:
-    digitalWrite(D_VLV5_NORM,LOW);
-    digitalWrite(D_VLV5_REV,LOW);
+    vlv_ctrl(VLV5_UNKNOWN,CCMID_cnd);
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111101111;  // CLOSE
-    digitalWrite(D_VLV5_NORM,LOW);
-    digitalWrite(D_VLV5_REV,HIGH);
+    vlv_ctrl(VLV5_CLOSE,CCMID_cnd);
     break;
   case 2:
-    U_ccmList[CCMID_cnd].value |= 0b10000;  // OPEN
-    digitalWrite(D_VLV5_NORM,HIGH);
-    digitalWrite(D_VLV5_REV,LOW);
+    vlv_ctrl(VLV5_OPEN,CCMID_cnd);
     break;
   }
   switch(set_VLV_SELECT[5]) {
   case 0:
-    digitalWrite(D_VLV6_NORM,LOW);
-    digitalWrite(D_VLV6_REV,LOW);
+    vlv_ctrl(VLV6_UNKNOWN,CCMID_cnd);
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111111011111;  // CLOSE
-    digitalWrite(D_VLV6_NORM,LOW);
-    digitalWrite(D_VLV6_REV,HIGH);
+    vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
     break;
   case 2:
-    U_ccmList[CCMID_cnd].value |= 0b100000;  // OPEN
-    digitalWrite(D_VLV6_NORM,HIGH);
-    digitalWrite(D_VLV6_REV,LOW);
+    vlv_ctrl(VLV6_OPEN,CCMID_cnd);
     break;
   }
   switch(set_VLV_SELECT[6]) {
   case 0:
-    digitalWrite(D_VLV7_NORM,LOW);
-    digitalWrite(D_VLV7_REV,LOW);
+    vlv_ctrl(VLV7_UNKNOWN,CCMID_cnd);
     break;
   case 1:
-    U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111110111111;  // CLOSE
-    digitalWrite(D_VLV7_NORM,LOW);
-    digitalWrite(D_VLV7_REV,HIGH);
+    vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
     break;
   case 2:
-    U_ccmList[CCMID_cnd].value |= 0b1000000;  // OPEN
-    digitalWrite(D_VLV7_NORM,HIGH);
-    digitalWrite(D_VLV7_REV,LOW);
+    vlv_ctrl(VLV7_OPEN,CCMID_cnd);
     break;
   }
-  VLVStatus[0] = U_ccmList[CCMID_cnd].value;
-
+  //  VLVStatus[0] = U_ccmList[CCMID_cnd].value;
 }
 
 void run_blower(void) {
+  U_ccmList[CCMID_cnd].value |= 0b100000000;  // RUN
   digitalWrite(BLOWER,HIGH);
 }
 
 void stop_blower(void) {
+  U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111011111111;  // STOP
   digitalWrite(BLOWER,LOW);
 }
 
 void run_pump(void) {
+  U_ccmList[CCMID_cnd].value |= 0b10000000;  // RUN
   digitalWrite(D_PUMP,HIGH);
 }
 
 void stop_pump(void) {
+  U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111101111111;  // STOP
   digitalWrite(D_PUMP,LOW);
 }
 
@@ -749,41 +715,23 @@ void emgstop(void) {
   Reset_lcdtext();
   lcd.print(lcdtext);
   lcd.setCursor(0,1);
-  lcd.print("EMG STOP");
+  lcd.print("EMG STOP        ");
   stop_blower();
   stop_pump();
   delay(500);
   if (digitalRead(EMGSTOP)==HIGH) {
     lcd.setCursor(0,1);
-    lcd.print("EMG ABANDAN");
+    lcd.print("EMG ABORT       ");
     return;
   }
   lcd.print("BLOWER/PUMP STOP");
-  // VLV1 CLOSE
-  digitalWrite(D_VLV1_NORM,LOW);
-  digitalWrite(D_VLV1_REV,HIGH);
-  // VLV2 CLOSE
-  digitalWrite(D_VLV2_NORM,LOW);
-  digitalWrite(D_VLV2_REV,HIGH);
-  // VLV3 CLOSE
-  digitalWrite(D_VLV3_NORM,LOW);
-  digitalWrite(D_VLV3_REV,HIGH);
-  // VLV4 OPEN
-  U_ccmList[CCMID_cnd].value |= 0b1000;  // OPEN
-  digitalWrite(D_VLV4_NORM,HIGH);
-  digitalWrite(D_VLV4_REV,LOW);
-  // VLV5 OPEN
-  U_ccmList[CCMID_cnd].value |= 0b10000;  // OPEN
-  digitalWrite(D_VLV5_NORM,HIGH);
-  digitalWrite(D_VLV5_REV,LOW);
-  // VLV6 OPEN
-  U_ccmList[CCMID_cnd].value |= 0b100000;  // OPEN
-  digitalWrite(D_VLV6_NORM,HIGH);
-  digitalWrite(D_VLV6_REV,LOW);
-  // VLV7 CLOSE
-  digitalWrite(D_VLV7_NORM,LOW);
-  digitalWrite(D_VLV7_REV,HIGH);
-  // setting cnd flag
+  vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV4_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV6_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
   U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111000111000;  // MOTORT and VALVE
   U_ccmList[CCMID_cnd].value |= 0b01000000000000000000000000000000;  // EMERGENCY STOP
   delay(2000);
