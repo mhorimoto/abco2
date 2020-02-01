@@ -23,7 +23,7 @@
 #include <Adafruit_MCP9600.h>
 #include "abco2.h"
 
-const char *VERSION = "U0032";
+const char *VERSION = "U0034";
 
 /////////////////////////////////////
 // Hardware Define
@@ -309,7 +309,7 @@ const char *StrMODE[10] = {
 signed long modeRUN;
 
 //表示素材の登録
-const int U_HtmlLine = 30; //Total number of HTML table rows.
+const int U_HtmlLine = 28; //Total number of HTML table rows.
 struct UECSUserHtml U_html[U_HtmlLine]={
   //{名前,入出力形式	,単位 ,詳細説明,選択肢文字列	,選択肢数,値	,最小値,最大値,小数桁数}
   {MODESEL,   UECSSELECTDATA, NONES, VLVNOTE0,   StrMODE,  10,&(modeRUN), 0,0,0},
@@ -337,8 +337,6 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   {CO2NAME, UECSSHOWDATA, CO2UNIT,  CO2NOTE2,DUMMY, 0,&(co2bigger), 0, 0, CO2_DIGIT},
   {BURNER_STATUS,     UECSSHOWSTRING, NONES, NONES, StrBURNER,   2,&(ShowBurner),0,0,0},
   {BURNER_FIRE,UECSSHOWSTRING, NONES, NONES, StrMISSFIRE, 2,&(ShowMissfire),0,0,0},
-  {WATER_LVL1, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[0]),0,0,0},
-  {WATER_LVL2, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[1]),0,0,0},
   {WATER_LVL1, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[0]),0,0,0},
   {WATER_LVL2, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[1]),0,0,0},
   {PRESS_LVL,  UECSSHOWSTRING, NONES, NONES, StrPRESS_LVL,2,&(ShowPressLevel[0]),0,0,0},
@@ -579,7 +577,11 @@ void loop(){
     ShowBurner = 1; // RUN
   } 
   for(mcp_id=0;mcp_id<8;mcp_id++) {
-    temp = mcp[mcp_id].readThermocouple();
+    if (mcp96_present[mcp_id]) {
+      temp = mcp[mcp_id].readThermocouple();
+    } else {
+      temp = -10.0;
+    }
     t1tValue[mcp_id] = temp * 10.0;
     U_ccmList[CCMID_TCTemp1+mcp_id].value = temp * 10.0;
   }
@@ -814,6 +816,7 @@ void emgstop(void) {
   delay(2000);
 }
 
+// Mode0 全閉
 void setMode0(void) {
   vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
@@ -826,6 +829,7 @@ void setMode0(void) {
   stop_pump();
 }
 
+// Mode1 CO2貯蔵
 void setMode1(void) {
   vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV2_OPEN,CCMID_cnd);
@@ -838,6 +842,7 @@ void setMode1(void) {
   run_pump();
 }
 
+// Mode2 放散(1): チャンバーair導入
 void setMode2(void) {
   vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
@@ -850,28 +855,70 @@ void setMode2(void) {
   stop_pump();
 }
 
+// Mode3 放散(2):外部air導入
 void setMode3(void) {
-  lcd.setCursor(0,1);
-  lcd.print("Mode3           ");
+  vlv_ctrl(VLV1_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV4_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV7_OPEN,CCMID_cnd);
+  run_blower();
+  stop_pump();
 }
 
+// Mode4 外気導入
 void setMode4(void) {
-  lcd.setCursor(0,1);
-  lcd.print("Mode4           ");
+  vlv_ctrl(VLV1_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV4_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV5_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV6_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV7_OPEN,CCMID_cnd);
+  run_blower();
+  stop_pump();
 }
 
+// Mode5 冷却
 void setMode5(void) {
-  lcd.setCursor(0,1);
-  lcd.print("Mode5           ");
+  vlv_ctrl(VLV1_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV4_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
+  run_blower();
+  stop_pump();
 }
 
+// Mode6 全開
 void setMode6(void) {
-  lcd.setCursor(0,1);
-  lcd.print("Mode6           ");
+  vlv_ctrl(VLV1_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV4_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
+  stop_blower();
+  stop_pump();
 }
 
+// Mode7 緊急停止
 void setMode7(void) {
-  lcd.setCursor(0,1);
-  lcd.print("Mode7           ");
+  vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
+  vlv_ctrl(VLV4_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV6_OPEN,CCMID_cnd);
+  vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
+  U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111000111000;  // MOTORT and VALVE
+  U_ccmList[CCMID_cnd].value |= 0b01000000000000000000000000000000;  // EMERGENCY STOP
+  stop_blower();
+  stop_pump();
 }
 

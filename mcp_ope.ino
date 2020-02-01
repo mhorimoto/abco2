@@ -5,6 +5,7 @@ void init_mcp9600(void) {
     if (! mcp[i].begin(mcp96_addr[i])) {
       Serial.print(mcp96_addr[i],HEX);
       Serial.println(" MCP not found");
+      mcp96_present[i] = false;
     } else {
       Serial.print("Found MCP address 0x");
       Serial.println(mcp96_addr[i],HEX);
@@ -15,6 +16,7 @@ void init_mcp9600(void) {
       Serial.print("Filter coefficient value set to: ");
       Serial.println(mcp[i].getFilterCoefficient());
       mcp[i].enable(true);
+      mcp96_present[i] = true;
     }
   }
   Serial.end();
