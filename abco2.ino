@@ -23,7 +23,7 @@
 #include <Adafruit_MCP9600.h>
 #include "abco2.h"
 
-const char *VERSION = "U0034";
+const char *VERSION = "U0036";
 
 /////////////////////////////////////
 // Hardware Define
@@ -45,9 +45,9 @@ boolean mcp96_present[8];  // true:present, false:absent
 //IPアドレスリセット用ジャンパーピン設定
 /////////////////////////////////////
 
-const byte U_DhcpPin = 2;
+const byte U_DhcpPin = 25;
 const byte U_DhcpPin_Sense=HIGH;
-const byte U_InitPin = 3;
+const byte U_InitPin = 26;
 const byte U_InitPin_Sense=LOW;
 
 ////////////////////////////////////
@@ -218,11 +218,11 @@ const char VLVNOTE4[] PROGMEM= "";
 const char VLVNOTE5[] PROGMEM= "";
 const char VLVNOTE6[] PROGMEM= "";
 const char VLVNOTE7[] PROGMEM= "";
-const char VLV_CLOSE[] PROGMEM= "手動CLOSE";
-const char VLV_OPEN[] PROGMEM= "手動OPEN";
-const char VLV_AUTO[] PROGMEM= "自動";
+const char VLV_CLOSE[] PROGMEM= "CLOSE";
+const char VLV_OPEN[] PROGMEM= "OPEN";
+const char VLV_VOFF[] PROGMEM= "OFF";
 const char *StrVLV_SELECT[3]={
-  VLV_AUTO,
+  VLV_VOFF,
   VLV_CLOSE,
   VLV_OPEN,
 };
@@ -592,6 +592,8 @@ void setup(){
   //  extern byte megaEtherSS;
   int i;
   //  megaEtherSS = 53; // SS is pin 53
+  //  pinMode(26,OUTPUT);
+  //  digitalWrite(26,LOW);
   UECSsetup();
   pinMode(A2,INPUT);
   for (i=0;i<8;i++) {

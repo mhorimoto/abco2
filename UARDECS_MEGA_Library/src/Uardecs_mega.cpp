@@ -1465,26 +1465,27 @@ void UECSstartEthernet(){
   void IPv4toByteArray(uint32_t,byte *);
   Serial.begin(115200);
   Ethernet.init(53);
-  Ethernet.begin(U_orgAttribute.mac);
-  //H if(U_orgAttribute.status&STATUS_SAFEMODE) { 
-  //H     byte defip[]     = {192,168,38,7};
-  //H     byte defsubnet[] = {255,255,255,0};
-  //H     byte defdummy[] = {0,0,0,0};
-  //H     Ethernet.begin(U_orgAttribute.mac, defip, defdummy,defdummy,defdummy);
-  //H } else {
-  //H     Ethernet.begin(U_orgAttribute.mac, U_orgAttribute.ip, U_orgAttribute.dns,
-  //H 		   U_orgAttribute.gateway, U_orgAttribute.subnet);
-  //H }
+  // DHCP mode
+  //Ethernet.begin(U_orgAttribute.mac);
+  if(U_orgAttribute.status&STATUS_SAFEMODE) { 
+    byte defip[]     = {192,168,0,7};
+    byte defsubnet[] = {255,255,255,0};
+    byte defdummy[] = {0,0,0,0};
+    Ethernet.begin(U_orgAttribute.mac, defip, defdummy,defdummy,defdummy);
+  } else {
+    Ethernet.begin(U_orgAttribute.mac, U_orgAttribute.ip, U_orgAttribute.dns,
+   		   U_orgAttribute.gateway, U_orgAttribute.subnet);
+  }
   IPv4toByteArray(Ethernet.localIP(),&__ipaddr[0]);
   Serial.print("locaIP() raw = ");
   Serial.println(Ethernet.localIP());
   sprintf(txt,"localIP() byte convert = %d.%d.%d.%d",__ipaddr[0],__ipaddr[1],__ipaddr[2],__ipaddr[3]);
   Serial.println(txt);
-  U_orgAttribute.ip[0] = __ipaddr[0]; //H
-  U_orgAttribute.ip[1] = __ipaddr[1]; //H
-  U_orgAttribute.ip[2] = __ipaddr[2]; //H
-  U_orgAttribute.ip[3] = __ipaddr[3]; //H
-  
+  //  U_orgAttribute.ip[0] = __ipaddr[0]; //H
+  //  U_orgAttribute.ip[1] = __ipaddr[1]; //H
+  //  U_orgAttribute.ip[2] = __ipaddr[2]; //H
+  //  U_orgAttribute.ip[3] = __ipaddr[3]; //H
+
   UECSlogserver.begin();
   UECS_UDP16520.begin(16520);
   UECS_UDP16529.begin(16529);
