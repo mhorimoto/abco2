@@ -1,7 +1,8 @@
 void k33_ope() {
   int rc,co2lp,co2icb;
   extern int co2detail,co2bigger;
-  
+
+  Serial.println("k33_ope() ENTER");
   rc = k33lp.readCO2(co2lp);
   if (rc==0) {
     U_ccmList[CCMID_K33LP].value = co2lp;
@@ -16,4 +17,5 @@ void k33_ope() {
   } else {
     U_ccmList[CCMID_K33ICB].value = (-1) * rc;
   }
+  Serial.println("k33_ope() EXIT");
 }

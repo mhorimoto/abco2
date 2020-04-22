@@ -2,12 +2,9 @@ void disp_select(int menusel) {
   int smenu;
   int pday,psec;
   extern char *StrMODE[];
-  
+  Serial.println("disp_select() ENTER");
   smenu = (menusel/100)+1;
-  //Serial.begin(115200);
-  //Serial.println(smenu);
   if ((smenu>=1) and (smenu<=3)) {
-    //Serial.println("TOD");
     RtcDateTime now = Rtc.GetDateTime();
     Reset_lcdtext();
     if (pday!=now.Day()) {
@@ -28,7 +25,6 @@ void disp_select(int menusel) {
     sprintf(lcdtext,"%16s",StrMODE[3]);
     lcd.print(lcdtext);
   } else {
-    //Serial.println("Default");
     lcd.setCursor(0,0);
     sprintf(lcdtitle,"ABCO2 %6s",VERSION);
     lcd.print(lcdtitle);
@@ -41,6 +37,5 @@ void disp_select(int menusel) {
   // case 9:
   // case 10:
   }
-  //Serial.end();
-
+  Serial.println("disp_select() EXIT");
 }

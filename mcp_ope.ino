@@ -1,6 +1,6 @@
 void init_mcp9600(void) {
   int i;
-  Serial.begin(115200);
+  //  Serial.begin(115200);
   for(i=0;i<8;i++) {
     if (! mcp[i].begin(mcp96_addr[i])) {
       Serial.print(mcp96_addr[i],HEX);
@@ -19,7 +19,7 @@ void init_mcp9600(void) {
       mcp96_present[i] = true;
     }
   }
-  Serial.end();
+  //  Serial.end();
 }
 
 int show_ADCresolution(int id) {
