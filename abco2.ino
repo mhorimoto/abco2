@@ -3,6 +3,7 @@
 //[概要]
 // ABCO2の基幹的プログラム
 //   Debug用にSerial.printを至るところにいれてある。
+//   UserEveryMinute()に観測関係ルーチンを入れる
 //////////////////////////////////////////
 
 
@@ -21,7 +22,7 @@
 #include <Adafruit_MCP9600.h>
 #include "abco2.h"
 
-const char *VERSION = "D0036";
+const char *VERSION = "D0037";
 
 /////////////////////////////////////
 // Hardware Define
@@ -525,6 +526,17 @@ void UserEverySecond() {
 }
 void UserEveryMinute() {
   Serial.println("UserEveryMinute() ENTER");
+  k33_ope();
+  for(mcp_id=0;mcp_id<8;mcp_id++) {
+    if (mcp96_present[mcp_id]) {
+      temp = mcp[mcp_id].readThermocouple();
+    } else {
+      temp = -10.0;
+    }
+    t1tValue[mcp_id] = temp * 10.0;
+    U_ccmList[CCMID_TCTemp1+mcp_id].value = temp * 10.0;
+    Serial.print("T-Temp");Serial.print(mcp_id+1);Serial.println(" CHECK");
+  }
   Serial.println("UserEveryMinute() EXIT");
 }
 void UserEveryLoop() {
@@ -547,7 +559,6 @@ void loop(){
   a2in = analogRead(A2);
   U_ccmList[CCMID_FUNCSEL].value= a2in;
   disp_select(a2in);
-  k33_ope();
   if (digitalRead(PRSLVL1)==HIGH) {
     ShowPressLevel[0] = 0; // HIGH
   } else {
@@ -595,16 +606,6 @@ void loop(){
     U_ccmList[CCMID_BURNER].value = 1;
     ShowBurner = 1; // RUN
     Serial.println("BURNER CHECK RUN");
-  } 
-  for(mcp_id=0;mcp_id<8;mcp_id++) {
-    if (mcp96_present[mcp_id]) {
-      temp = mcp[mcp_id].readThermocouple();
-    } else {
-      temp = -10.0;
-    }
-    t1tValue[mcp_id] = temp * 10.0;
-    U_ccmList[CCMID_TCTemp1+mcp_id].value = temp * 10.0;
-    Serial.print("T-Temp");Serial.print(mcp_id+1);Serial.println(" CHECK");
   }
   ChangeValve();
 }
