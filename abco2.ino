@@ -472,12 +472,18 @@ void UserInit(){
   //You must assign unique MAC address to each nodes.
   //MACアドレス設定、必ずEthernet Shieldに書かれた値を入力して下さい。
   //全てのノードに異なるMACアドレスを設定する必要があります。
-  U_orgAttribute.mac[0] = EEPROM.read(4090+0); // 0x02;
-  U_orgAttribute.mac[1] = EEPROM.read(4090+1); // 0xa2;
-  U_orgAttribute.mac[2] = EEPROM.read(4090+2); // 0x73;
-  U_orgAttribute.mac[3] = EEPROM.read(4090+3); // 0x8f;
-  U_orgAttribute.mac[4] = EEPROM.read(4090+4); // 0x00;
-  U_orgAttribute.mac[5] = EEPROM.read(4090+5); // 0x01;
+  //U_orgAttribute.mac[0] = EEPROM.read(4090+0); // 0x02;
+  //U_orgAttribute.mac[1] = EEPROM.read(4090+1); // 0xa2;
+  //U_orgAttribute.mac[2] = EEPROM.read(4090+2); // 0x73;
+  //U_orgAttribute.mac[3] = EEPROM.read(4090+3); // 0x8f;
+  //U_orgAttribute.mac[4] = EEPROM.read(4090+4); // 0x00;
+  //U_orgAttribute.mac[5] = EEPROM.read(4090+5); // 0x01;
+  U_orgAttribute.mac[0] = 0x02;
+  U_orgAttribute.mac[1] = 0xa2;
+  U_orgAttribute.mac[2] = 0x73;
+  U_orgAttribute.mac[3] = 0x8f;
+  U_orgAttribute.mac[4] = 0x00;
+  U_orgAttribute.mac[5] = 0x02;
 
   //Set ccm list
   UECSsetCCM(true, CCMID_cnd   ,  ccmNameCnd ,  ccmTypeCnd ,  ccmUnitCnd , 29, 0, A_1S_0);
@@ -525,6 +531,8 @@ void UserEverySecond() {
   Serial.println("UserEverySecond() EXIT");
 }
 void UserEveryMinute() {
+  float temp;
+  int   mcp_id;
   Serial.println("UserEveryMinute() ENTER");
   k33_ope();
   for(mcp_id=0;mcp_id<8;mcp_id++) {
@@ -550,7 +558,6 @@ void UserEveryLoop() {
 void loop(){
   int rc,co2lp,co2icb;
   int mcp_id;
-  float temp;
   Serial.println("loop() ENTER");
   Serial.println("UECSloop() ENTER");
   UECSloop();
