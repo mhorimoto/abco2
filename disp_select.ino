@@ -2,7 +2,7 @@ void disp_select(int menusel) {
   int smenu;
   int pday,psec;
   extern char *StrMODE[];
-  Serial.println("disp_select() ENTER");
+  Serial.println("64");
   smenu = (menusel/100)+1;
   if ((smenu>=1) and (smenu<=3)) {
     RtcDateTime now = Rtc.GetDateTime();
@@ -37,5 +37,5 @@ void disp_select(int menusel) {
   // case 9:
   // case 10:
   }
-  Serial.println("disp_select() EXIT");
+  Serial.println("-64");
 }
