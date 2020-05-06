@@ -10,6 +10,7 @@
 #include <SPI.h>
 #include <Ethernet2.h>
 #include <avr/pgmspace.h>
+#include <avr/wdt.h>
 #include <EEPROM.h>
 #include <Uardecs_mega.h>
 #include <LiquidCrystal_I2C.h>
@@ -22,7 +23,18 @@
 #include <Adafruit_MCP9600.h>
 #include "abco2.h"
 
-const char *VERSION = "D0038";
+uint8_t mcusr_mirror __attribute__ ((section (".noinit")));
+void get_mcusr(void)	 \
+  __attribute__((naked)) \
+  __attribute__((section(".init3")));
+void get_mcusr(void) {
+  mcusr_mirror = MCUSR;
+  MCUSR = 0;
+  wdt_disable();
+}
+
+
+const char *VERSION = "D0039";
 
 /////////////////////////////////////
 // Hardware Define
@@ -559,6 +571,7 @@ void loop(){
   int rc,co2lp,co2icb;
   int mcp_id;
   Serial.println("1");
+  wdt_reset();
   UECSloop();
   if (digitalRead(EMGSTOP)==LOW) emgstop(); // 緊急停止の確認　割り込みが効かないのでここに入れる。
   Serial.println("32768");
@@ -627,8 +640,11 @@ void setup(){
   //  megaEtherSS = 53; // SS is pin 53
   //  pinMode(26,OUTPUT);
   //  digitalWrite(26,LOW);
+  configure_wdt();
   Serial.begin(115200);
-  Serial.println("\nsetup() ENTER");
+  Serial.print("\n***ABCO2 START VERSION ");
+  Serial.println(VERSION);
+  Serial.println("setup() ENTER");
   Serial.println("UECSsetup() ENTER");
   UECSsetup();
   Serial.println("UECSsetup() EXIT");
@@ -1012,3 +1028,22 @@ void setMode7(void) {
   Serial.println("-8388608");
 }
 
+void configure_wdt(void) {
+  cli();                           // disable interrupts for changing the registers
+  MCUSR = 0;                       // reset status register flags
+                                   // Put timer in interrupt-only mode:
+  WDTCSR |= 0b00011000;            // Set WDCE (5th from left) and WDE (4th from left) to enter config mode,
+                                   // using bitwise OR assignment (leaves other bits unchanged).
+  WDTCSR =  0b00001000 | 0b100001; // clr WDIE: interrupt enabled
+                                   // set WDE: reset disabled
+                                   // and set delay interval (right side of bar) to 8 seconds
+  sei();                           // re-enable interrupts
+                                   // reminder of the definitions for the time before firing
+                                   // delay interval patterns:
+                                   //  16 ms:     0b000000
+                                   //  500 ms:    0b000101
+                                   //  1 second:  0b000110
+                                   //  2 seconds: 0b000111
+                                   //  4 seconds: 0b100000
+                                   //  8 seconds: 0b100001
+}
