@@ -278,7 +278,7 @@ const char ProgramTime[] PROGMEM=__TIME__;
 #define EEPROM_L_CCM_TOTAL		30
 
 
-const char UECShttpHead200_OK[] PROGMEM="HTTP/1.1 200 OK\r\n";
+const char UECShttpHead200_OK[] PROGMEM="HTTP/1.0 200 OK\r\n";
 const char UECShttpHeadContentType[] PROGMEM="Content-Type: text/html\r\n";
 const char UECShttpHeadConnection[] PROGMEM="Connection: close\r\n\r\n";
 
