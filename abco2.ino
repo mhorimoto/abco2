@@ -34,7 +34,7 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0039";
+const char *VERSION = "D0040";
 
 /////////////////////////////////////
 // Hardware Define
@@ -317,7 +317,7 @@ const char *StrMODE[10] = {
   MODE6,     //  8
   MODE7      //  9
 };
-signed long modeRUN;
+signed long modeRUN,PmodeRUN;
 
 //表示素材の登録
 const int U_HtmlLine = 28; //Total number of HTML table rows.
@@ -540,6 +540,7 @@ void OnWebFormRecieved() {
 
 void UserEverySecond() {
   Serial.println("UserEverySecond() ENTER");
+  wdt_reset();
   Serial.println("UserEverySecond() EXIT");
 }
 void UserEveryMinute() {
@@ -560,8 +561,6 @@ void UserEveryMinute() {
   Serial.println("UserEveryMinute() EXIT");
 }
 void UserEveryLoop() {
-  Serial.println("32");
-  Serial.println("-32");
 }
 
 /////////////////////////////////////////////////////
@@ -570,14 +569,13 @@ void UserEveryLoop() {
 void loop(){
   int rc,co2lp,co2icb;
   int mcp_id;
-  Serial.println("1");
-  wdt_reset();
+  //Serial.println("1");
   UECSloop();
   if (digitalRead(EMGSTOP)==LOW) emgstop(); // 緊急停止の確認　割り込みが効かないのでここに入れる。
-  Serial.println("32768");
+  //Serial.println("32768");
   a2in = analogRead(A2);
   U_ccmList[CCMID_FUNCSEL].value= a2in;
-  Serial.println("-32768");
+  //Serial.println("-32768");
   disp_select(a2in);
   Serial.println("256");
   if (digitalRead(PRSLVL1)==HIGH) {
@@ -631,7 +629,7 @@ void loop(){
   }
   Serial.println("-8192");
   ChangeValve();
-  Serial.println("-1");
+  //Serial.println("-1");
 }
 
 void setup(){
@@ -682,8 +680,8 @@ void setup(){
   //  Serial.println("init_mcp9600() ENTER");
   init_mcp9600();
   //  Serial.println("init_mcp9600() EXIT");
-  //  sprintf(lcdtitle,"ABCO2 %6s",VERSION);
-  Serial.println(lcdtitle);
+  sprintf(lcdtitle,"ABCO2 %6s",VERSION);
+  //  Serial.println(lcdtitle);
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0,0);
@@ -700,45 +698,45 @@ void setup(){
 //バルブ動作を変化させる関数
 //---------------------------------------------------------
 void ChangeValve(){
-  Serial.println("16384");
+  Serial.print("ChgVlv ");
   switch(U_ccmList[CCMID_MODE].value) {
   case 0:  // MODE AUTO
-    Serial.println("-16384");
+    Serial.println("AUTO");
     return;
   case 1:  // MODE MANUAL
-    Serial.println("-16384");
+    Serial.println("MANUAL");
     break;
   case 2:  // MODE0:
     setMode0();
-    Serial.println("-16384");
+    Serial.println("M0");
     return;
   case 3:  // MODE1:
     setMode1();
-    Serial.println("-16384");
+    Serial.println("M1");
     return;
   case 4:  // MODE2:
     setMode2();
-    Serial.println("-16384");
+    Serial.println("M2");
     return;
   case 5:  // MODE3:
     setMode3();
-    Serial.println("-16384");
+    Serial.println("M3");
     return;
   case 6:  // MODE4:
     setMode4();
-    Serial.println("-16384");
+    Serial.println("M4");
     return;
   case 7:  // MODE5:
     setMode5();
-    Serial.println("-16384");
+    Serial.println("M5");
     return;
   case 8:  // MODE6:
     setMode6();
-    Serial.println("-16384");
+    Serial.println("M6");
     return;
   case 9:  // MODE7:
     setMode7();
-    Serial.println("-16384");
+    Serial.println("M7");
     return;
   }
   switch(U_ccmList[CCMID_BLOWER].value) {
@@ -836,11 +834,10 @@ void ChangeValve(){
     break;
   }
   //  VLVStatus[0] = U_ccmList[CCMID_cnd].value;
-  Serial.println("-16384");
 }
 
 void run_blower(void) {
-  Serial.println("16777216");
+  Serial.println("RUN BL");
   U_ccmList[CCMID_cnd].value |= 0b100000000;  // RUN
   digitalWrite(BLOWER,HIGH);
   Serial.println("-16777216");

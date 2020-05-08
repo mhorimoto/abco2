@@ -359,13 +359,13 @@ const char UECShtmlEditCCMCmdBtnScript2[] PROGMEM="\";}r=confirm(m);if(r){locati
 
 //const char UECSaccess_NOSPC_GETP4[] PROGMEM = "GET/4";
 //const char UECSaccess_NOSPC_GETP5A[] PROGMEM = "GET/5?L=";
-const char UECSaccess_NOSPC_GETP3[] PROGMEM = "GET/3";
-const char UECSaccess_NOSPC_GETP3A[] PROGMEM = "GET/3?L=";
-const char UECSaccess_NOSPC_GETP0[] PROGMEM = "GET/HTTP/1.1";
-const char UECSaccess_NOSPC_GETP1[] PROGMEM = "GET/1HTTP/1.1";
-const char UECSaccess_NOSPC_GETP1A[] PROGMEM = "GET/1?L=";
-const char UECSaccess_NOSPC_GETP2[] PROGMEM = "GET/2HTTP/1.1";
-const char UECSaccess_NOSPC_GETP2A[] PROGMEM = "GET/2?L=";
+const char UECSaccess_NOSPC_GETP3[] PROGMEM = "GET /3";
+const char UECSaccess_NOSPC_GETP3A[] PROGMEM = "GET /3?L=";
+const char UECSaccess_NOSPC_GETP0[] PROGMEM = "GET / HTTP/1.1";
+const char UECSaccess_NOSPC_GETP1[] PROGMEM = "GET /1 HTTP/1.1";
+const char UECSaccess_NOSPC_GETP1A[] PROGMEM = "GET /1?L=";
+const char UECSaccess_NOSPC_GETP2[] PROGMEM = "GET /2 HTTP/1.1";
+const char UECSaccess_NOSPC_GETP2A[] PROGMEM = "GET /2?L=";
 const char UECSaccess_LEQUAL[] PROGMEM = "L=";
 
 
