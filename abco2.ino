@@ -2,6 +2,8 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
+//   運転種別が自動のときだけ (D0047)
+//   昼間はMode2,夜間はMode0かMode1になるように。 (D0046)
 //   mcp_ope.ino,k33_ope.inoのシリアル出力を抑制 (D0045)
 //   UECSsetup()の後にcnd.mCDに起動メッセージを入れる。
 //        起動メッセージは0x68010+VERSION
@@ -42,8 +44,8 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0045";
-const signed long ccmver = 0x68010 + 45;
+const char *VERSION = "D0047";
+const signed long ccmver = 0x68010 + 47;
 
 /////////////////////////////////////
 // Hardware Define
@@ -331,13 +333,13 @@ const char *StrRUN[2] = {
   RUNAUTO,  //  0
   RUNMANU,  //  1
 };
-signed long runSEL,PrunSEL;
+signed long runMODE,PrunMODE;
 
 //表示素材の登録
 const int U_HtmlLine = 29; //Total number of HTML table rows.
 struct UECSUserHtml U_html[U_HtmlLine]={
   //{名前,    入出力形式,     単位,     詳細説明, 選択肢文字列,  選択肢数,値,	      最小値,最大値,小数桁数}
-  {StrRUNMODE,UECSSELECTDATA, NONES,    VLVNOTE0, StrRUN,        2,       &(runSEL),  0,     0,     0},
+  {StrRUNMODE,UECSSELECTDATA, NONES,    VLVNOTE0, StrRUN,        2,       &(runMODE), 0,     0,     0},
   {StrMODESEL,UECSSELECTDATA, NONES,    VLVNOTE0, StrMODE,       8,       &(modeRUN), 0,     0,     0},
   {MOTONAME0, UECSSELECTDATA, NONES,    VLVNOTE0, StrMOTOSW,     3,       &(statusMOTO_ON_OFF_AUTO[0]),0,0,0},
   {MOTONAME1, UECSSELECTDATA, NONES,    VLVNOTE0, StrMOTOSW,     3,       &(statusMOTO_ON_OFF_AUTO[1]),0,0,0},
@@ -552,6 +554,7 @@ void OnWebFormRecieved() {
   U_ccmList[CCMID_BLOWER].value  = statusMOTO_ON_OFF_AUTO[0];
   U_ccmList[CCMID_PUMP].value    = statusMOTO_ON_OFF_AUTO[1];
   U_ccmList[CCMID_MODE].value    = modeRUN;
+  U_ccmList[CCMID_RUNMODE].value = runMODE;
   ChangeValve();
 }
 
@@ -561,6 +564,18 @@ void UserEverySecond() {
 void UserEveryMinute() {
   float temp;
   int   mcp_id;
+  RtcDateTime now = Rtc.GetDateTime();
+  if (U_ccmList[CCMID_RUNMODE].value == 0) { // RUN MODE is AUTO
+    if ((now.Hour()>6)&&(now.Hour()<18)) {
+      setMode2();
+    } else {
+      if (U_ccmList[CCMID_BURNER].value == 0) { // Burner STOPPED
+	setMode0();
+      } else {      // Burner RUNNING
+	setMode1();
+      }
+    }
+  }
   k33_ope();
   for(mcp_id=0;mcp_id<8;mcp_id++) {
     if (mcp96_present[mcp_id]) {
@@ -684,33 +699,32 @@ void setup(){
 //バルブ動作を変化させる関数
 //---------------------------------------------------------
 void ChangeValve(){
-  switch(U_ccmList[CCMID_MODE].value) {
-  case 0:  // MODE AUTO
+  if (U_ccmList[CCMID_RUNMODE].value != 0) {
     return;
-  case 1:  // MODE MANUAL
-    break;
-  case 2:  // MODE0:
+  }
+  switch(U_ccmList[CCMID_MODE].value) {
+  case 0:  // MODE0:
     setMode0();
     return;
-  case 3:  // MODE1:
+  case 1:  // MODE1:
     setMode1();
     return;
-  case 4:  // MODE2:
+  case 2:  // MODE2:
     setMode2();
     return;
-  case 5:  // MODE3:
+  case 3:  // MODE3:
     setMode3();
     return;
-  case 6:  // MODE4:
+  case 4:  // MODE4:
     setMode4();
     return;
-  case 7:  // MODE5:
+  case 5:  // MODE5:
     setMode5();
     return;
-  case 8:  // MODE6:
+  case 6:  // MODE6:
     setMode6();
     return;
-  case 9:  // MODE7:
+  case 7:  // MODE7:
     setMode7();
     return;
   }
@@ -867,6 +881,7 @@ void emgstop(void) {
 
 // Mode0 全閉
 void setMode0(void) {
+  modeRUN = 0;
   vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -880,6 +895,7 @@ void setMode0(void) {
 
 // Mode1 CO2貯蔵
 void setMode1(void) {
+  modeRUN = 1;
   vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV2_OPEN,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -893,6 +909,7 @@ void setMode1(void) {
 
 // Mode2 放散(1): チャンバーair導入
 void setMode2(void) {
+  modeRUN = 2;
   vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_OPEN,CCMID_cnd);
@@ -906,6 +923,7 @@ void setMode2(void) {
 
 // Mode3 放散(2):外部air導入
 void setMode3(void) {
+  modeRUN = 3;
   vlv_ctrl(VLV1_OPEN,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -919,6 +937,7 @@ void setMode3(void) {
 
 // Mode4 外気導入
 void setMode4(void) {
+  modeRUN = 4;
   vlv_ctrl(VLV1_OPEN,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -932,6 +951,7 @@ void setMode4(void) {
 
 // Mode5 冷却
 void setMode5(void) {
+  modeRUN = 5;
   vlv_ctrl(VLV1_OPEN,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -945,6 +965,7 @@ void setMode5(void) {
 
 // Mode6 全開
 void setMode6(void) {
+  modeRUN = 6;
   vlv_ctrl(VLV1_OPEN,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -958,6 +979,7 @@ void setMode6(void) {
 
 // Mode7 緊急停止
 void setMode7(void) {
+  modeRUN = 7;
   vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);

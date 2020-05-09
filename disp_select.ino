@@ -6,6 +6,7 @@ void disp_select(int menusel) {
   smenu = (menusel/100)+1;
   if ((smenu>=1) and (smenu<=3)) {
     RtcDateTime now = Rtc.GetDateTime();
+    //    extern RtcDateTime now;
     Reset_lcdtext();
     if (pday!=now.Day()) {
       pday = now.Day();
