@@ -2,8 +2,16 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
-//   Debug用のSerial出力を止める。
-//   UserEveryMinute()に観測関係ルーチンを入れる
+//   mcp_ope.ino,k33_ope.inoのシリアル出力を抑制 (D0045)
+//   UECSsetup()の後にcnd.mCDに起動メッセージを入れる。
+//        起動メッセージは0x68010+VERSION
+//        そうすると 10進数表記だと 4260xx(Version)になる。
+//        cndフォーマット的には、
+//           0110: スタンドアーロンモード
+//           1000: 拡張用予約領域を使う
+//           0x010: 10進数で000にするための補正 (D0043,D0044)
+//   Debug用のSerial出力を止める。(D0042)
+//   UserEveryMinute()に観測関係ルーチンを入れる (D0040)
 //////////////////////////////////////////
 
 
@@ -34,7 +42,8 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0041";
+const char *VERSION = "D0045";
+const signed long ccmver = 0x68010 + 45;
 
 /////////////////////////////////////
 // Hardware Define
@@ -328,7 +337,7 @@ signed long runSEL,PrunSEL;
 const int U_HtmlLine = 29; //Total number of HTML table rows.
 struct UECSUserHtml U_html[U_HtmlLine]={
   //{名前,    入出力形式,     単位,     詳細説明, 選択肢文字列,  選択肢数,値,	      最小値,最大値,小数桁数}
-  {StrRUNEMODE,UECSSELECTDATA,NONES,    VLVNOTE0, StrRUN,        2,       &(runSEL),  0,     0,     0},
+  {StrRUNMODE,UECSSELECTDATA, NONES,    VLVNOTE0, StrRUN,        2,       &(runSEL),  0,     0,     0},
   {StrMODESEL,UECSSELECTDATA, NONES,    VLVNOTE0, StrMODE,       8,       &(modeRUN), 0,     0,     0},
   {MOTONAME0, UECSSELECTDATA, NONES,    VLVNOTE0, StrMOTOSW,     3,       &(statusMOTO_ON_OFF_AUTO[0]),0,0,0},
   {MOTONAME1, UECSSELECTDATA, NONES,    VLVNOTE0, StrMOTOSW,     3,       &(statusMOTO_ON_OFF_AUTO[1]),0,0,0},
@@ -480,9 +489,9 @@ const char ccmNameMODE[] PROGMEM="Mode";
 const char ccmTypeMODE[] PROGMEM="mode.mCD";
 const char ccmUnitMODE[] PROGMEM= "";
 
-const char ccmNameMODE[] PROGMEM="RunMode";
-const char ccmTypeMODE[] PROGMEM="runmode.mCD";
-const char ccmUnitMODE[] PROGMEM= "";
+const char ccmNameRunMODE[] PROGMEM="RunMode";
+const char ccmTypeRunMODE[] PROGMEM="runmode.mCD";
+const char ccmUnitRunMODE[] PROGMEM= "";
 
 const char ccmNameCnd[] PROGMEM= "NodeCondition";
 const char ccmTypeCnd[] PROGMEM= "cnd.mCD";
@@ -510,6 +519,7 @@ void UserInit(){
   //Set ccm list
   UECSsetCCM(true, CCMID_cnd   ,  ccmNameCnd ,  ccmTypeCnd ,  ccmUnitCnd , 29, 0, A_1S_0);
   UECSsetCCM(true, CCMID_MODE,    ccmNameMODE,  ccmTypeMODE,  ccmUnitMODE, 28, 0, A_1S_0);
+  UECSsetCCM(true, CCMID_RUNMODE, ccmNameRunMODE,ccmTypeRunMODE,ccmUnitRunMODE, 28, 0, A_1S_0);
   UECSsetCCM(true, CCMID_FUNCSEL, ccmNameFUNC,  ccmTypeFUNC,  ccmUnitFUNC, 29, 0, A_1S_0);
   UECSsetCCM(true, CCMID_BLOWER,  ccmNameBLOWER,ccmTypeBLOWER,ccmUnitBLOWER,29, 0, A_10S_0);
   UECSsetCCM(true, CCMID_PUMP,    ccmNamePUMP,  ccmTypePUMP,  ccmUnitPUMP, 29, 0, A_10S_0);
@@ -572,6 +582,9 @@ void loop(){
   int rc,co2lp,co2icb;
   int mcp_id;
   UECSloop();
+  if (U_ccmList[CCMID_cnd].value==ccmver) {
+    U_ccmList[CCMID_cnd].value=0;
+  }
   if (digitalRead(EMGSTOP)==LOW) emgstop(); // 緊急停止の確認　割り込みが効かないのでここに入れる。
   a2in = analogRead(A2);
   U_ccmList[CCMID_FUNCSEL].value= a2in;
@@ -626,6 +639,7 @@ void setup(){
   //  digitalWrite(26,LOW);
   configure_wdt();
   UECSsetup();
+  U_ccmList[CCMID_cnd].value = ccmver;
   pinMode(A2,INPUT);
   for (i=0;i<8;i++) {
     VLVStatus[i] = 1;
