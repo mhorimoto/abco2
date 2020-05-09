@@ -2,7 +2,7 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
-//   Debug用にSerial.printを至るところにいれてある。
+//   Debug用のSerial出力を止める。
 //   UserEveryMinute()に観測関係ルーチンを入れる
 //////////////////////////////////////////
 
@@ -34,7 +34,7 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0040";
+const char *VERSION = "D0041";
 
 /////////////////////////////////////
 // Hardware Define
@@ -294,9 +294,7 @@ const char NONES[] PROGMEM= "";
 const char** DUMMY = NULL;
 
 // 自動モードと手動モードの切り替え
-const char MODESEL[] PROGMEM="運転モード";
-const char MODEAUTO[] PROGMEM="自動";
-const char MODEMANU[] PROGMEM="手動";
+const char StrMODESEL[] PROGMEM="モード選択";
 const char MODE0[] PROGMEM="MODE-0";
 const char MODE1[] PROGMEM="MODE-1";
 const char MODE2[] PROGMEM="MODE-2";
@@ -305,48 +303,56 @@ const char MODE4[] PROGMEM="MODE-4";
 const char MODE5[] PROGMEM="MODE-5";
 const char MODE6[] PROGMEM="MODE-6";
 const char MODE7[] PROGMEM="MODE-7";
-const char *StrMODE[10] = {
-  MODEAUTO,  //  0
-  MODEMANU,  //  1
-  MODE0,     //  2
-  MODE1,     //  3
-  MODE2,     //  4
-  MODE3,     //  5
-  MODE4,     //  6
-  MODE5,     //  7
-  MODE6,     //  8
-  MODE7      //  9
+const char *StrMODE[8] = {
+  MODE0,     //  0
+  MODE1,     //  1
+  MODE2,     //  2
+  MODE3,     //  3
+  MODE4,     //  4
+  MODE5,     //  5
+  MODE6,     //  6
+  MODE7      //  7
 };
 signed long modeRUN,PmodeRUN;
 
+const char StrRUNMODE[]  PROGMEM="運転種別";
+const char RUNAUTO[]     PROGMEM="自動";
+const char RUNMANU[]     PROGMEM="手動";
+const char *StrRUN[2] = {
+  RUNAUTO,  //  0
+  RUNMANU,  //  1
+};
+signed long runSEL,PrunSEL;
+
 //表示素材の登録
-const int U_HtmlLine = 28; //Total number of HTML table rows.
+const int U_HtmlLine = 29; //Total number of HTML table rows.
 struct UECSUserHtml U_html[U_HtmlLine]={
-  //{名前,入出力形式	,単位 ,詳細説明,選択肢文字列	,選択肢数,値	,最小値,最大値,小数桁数}
-  {MODESEL,   UECSSELECTDATA, NONES, VLVNOTE0,   StrMODE,  10,&(modeRUN), 0,0,0},
-  {MOTONAME0, UECSSELECTDATA, NONES, VLVNOTE0,   StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[0]),0,0,0},
-  {MOTONAME1, UECSSELECTDATA, NONES, VLVNOTE0,   StrMOTOSW,3,&(statusMOTO_ON_OFF_AUTO[1]),0,0,0},
-  {VLVNAME0,UECSSELECTDATA,NONES,VLVNOTE0, StrVLV_SELECT,3, &(set_VLV_SELECT[0]), 0, 0, 0},
-  {VLVNAME1,UECSSELECTDATA,NONES,VLVNOTE1, StrVLV_SELECT,3, &(set_VLV_SELECT[1]), 0, 0, 0},
-  {VLVNAME2,UECSSELECTDATA,NONES,VLVNOTE2, StrVLV_SELECT,3, &(set_VLV_SELECT[2]), 0, 0, 0},
-  {VLVNAME3,UECSSELECTDATA,NONES,VLVNOTE3, StrVLV_SELECT,3, &(set_VLV_SELECT[3]), 0, 0, 0},
-  {VLVNAME4,UECSSELECTDATA,NONES,VLVNOTE4, StrVLV_SELECT,3, &(set_VLV_SELECT[4]), 0, 0, 0},
-  {VLVNAME5,UECSSELECTDATA,NONES,VLVNOTE5, StrVLV_SELECT,3, &(set_VLV_SELECT[5]), 0, 0, 0},
-  {VLVNAME6,UECSSELECTDATA,NONES,VLVNOTE6, StrVLV_SELECT,3, &(set_VLV_SELECT[6]), 0, 0, 0}, // #10
-  {FUNCSEL,   UECSSHOWDATA,   NONES, NONES,      DUMMY,    0,&(a2in),     0, 0, 0},
-  {T1TEMP0, UECSSHOWDATA, TempUNIT, T1NOTE0, DUMMY, 0,&(t1tValue[0])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {T1TEMP1, UECSSHOWDATA, TempUNIT, T1NOTE1, DUMMY, 0,&(t1tValue[1])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {T1TEMP2, UECSSHOWDATA, TempUNIT, T1NOTE2, DUMMY, 0,&(t1tValue[2])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {T1TEMP3, UECSSHOWDATA, TempUNIT, T1NOTE3, DUMMY, 0,&(t1tValue[3])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {T1TEMP4, UECSSHOWDATA, TempUNIT, T1NOTE4, DUMMY, 0,&(t1tValue[4])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {T1TEMP5, UECSSHOWDATA, TempUNIT, T1NOTE5, DUMMY, 0,&(t1tValue[5])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {T1TEMP6, UECSSHOWDATA, TempUNIT, T1NOTE6, DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {T1TEMP6, UECSSHOWDATA, TempUNIT, T1NOTE6, DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT}, // #20
-  {T1TEMP7, UECSSHOWDATA, TempUNIT, T1NOTE7, DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT},
-  {CO2NAME, UECSSHOWDATA, CO2UNIT,  CO2NOTE1,DUMMY, 0,&(co2detail), 0, 0, CO2_DIGIT},
-  {CO2NAME, UECSSHOWDATA, CO2UNIT,  CO2NOTE2,DUMMY, 0,&(co2bigger), 0, 0, CO2_DIGIT},
-  {BURNER_STATUS,     UECSSHOWSTRING, NONES, NONES, StrBURNER,   2,&(ShowBurner),0,0,0},
+  //{名前,    入出力形式,     単位,     詳細説明, 選択肢文字列,  選択肢数,値,	      最小値,最大値,小数桁数}
+  {StrRUNEMODE,UECSSELECTDATA,NONES,    VLVNOTE0, StrRUN,        2,       &(runSEL),  0,     0,     0},
+  {StrMODESEL,UECSSELECTDATA, NONES,    VLVNOTE0, StrMODE,       8,       &(modeRUN), 0,     0,     0},
+  {MOTONAME0, UECSSELECTDATA, NONES,    VLVNOTE0, StrMOTOSW,     3,       &(statusMOTO_ON_OFF_AUTO[0]),0,0,0},
+  {MOTONAME1, UECSSELECTDATA, NONES,    VLVNOTE0, StrMOTOSW,     3,       &(statusMOTO_ON_OFF_AUTO[1]),0,0,0},
+  {VLVNAME0,  UECSSELECTDATA, NONES,    VLVNOTE0, StrVLV_SELECT, 3, &(set_VLV_SELECT[0]), 0, 0, 0},
+  {VLVNAME1,  UECSSELECTDATA, NONES,    VLVNOTE1, StrVLV_SELECT, 3, &(set_VLV_SELECT[1]), 0, 0, 0},
+  {VLVNAME2,  UECSSELECTDATA, NONES,    VLVNOTE2, StrVLV_SELECT, 3, &(set_VLV_SELECT[2]), 0, 0, 0},
+  {VLVNAME3,  UECSSELECTDATA, NONES,    VLVNOTE3, StrVLV_SELECT, 3, &(set_VLV_SELECT[3]), 0, 0, 0},
+  {VLVNAME4,  UECSSELECTDATA, NONES,    VLVNOTE4, StrVLV_SELECT, 3, &(set_VLV_SELECT[4]), 0, 0, 0},
+  {VLVNAME5,  UECSSELECTDATA, NONES,    VLVNOTE5, StrVLV_SELECT, 3, &(set_VLV_SELECT[5]), 0, 0, 0},
+  {VLVNAME6,  UECSSELECTDATA, NONES,    VLVNOTE6, StrVLV_SELECT, 3, &(set_VLV_SELECT[6]), 0, 0, 0}, // #10
+  {FUNCSEL,   UECSSHOWDATA,   NONES,    NONES,    DUMMY,    0,&(a2in),     0, 0, 0},
+  {T1TEMP0,   UECSSHOWDATA,   TempUNIT, T1NOTE0,  DUMMY, 0,&(t1tValue[0])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP1,   UECSSHOWDATA,   TempUNIT, T1NOTE1,  DUMMY, 0,&(t1tValue[1])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP2,   UECSSHOWDATA,   TempUNIT, T1NOTE2,  DUMMY, 0,&(t1tValue[2])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP3,   UECSSHOWDATA,   TempUNIT, T1NOTE3,  DUMMY, 0,&(t1tValue[3])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP4,   UECSSHOWDATA,   TempUNIT, T1NOTE4,  DUMMY, 0,&(t1tValue[4])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP5,   UECSSHOWDATA,   TempUNIT, T1NOTE5,  DUMMY, 0,&(t1tValue[5])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP6,   UECSSHOWDATA,   TempUNIT, T1NOTE6,  DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP7,   UECSSHOWDATA,   TempUNIT, T1NOTE7,  DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {T1TEMP6,   UECSSHOWDATA,   TempUNIT, T1NOTE6,  DUMMY, 0,&(t1tValue[6])	, 0, 0, T1T_DECIMAL_DIGIT}, // #20
+  {T1TEMP7,   UECSSHOWDATA,   TempUNIT, T1NOTE7,  DUMMY, 0,&(t1tValue[7])	, 0, 0, T1T_DECIMAL_DIGIT},
+  {CO2NAME,   UECSSHOWDATA,   CO2UNIT,  CO2NOTE1, DUMMY, 0,&(co2detail), 0, 0, CO2_DIGIT},
+  {CO2NAME,   UECSSHOWDATA,   CO2UNIT,  CO2NOTE2, DUMMY, 0,&(co2bigger), 0, 0, CO2_DIGIT},
+  {BURNER_STATUS,UECSSHOWSTRING, NONES, NONES,    StrBURNER,   2,&(ShowBurner),0,0,0},
   {BURNER_FIRE,UECSSHOWSTRING, NONES, NONES, StrMISSFIRE, 2,&(ShowMissfire),0,0,0},
   {WATER_LVL1, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[0]),0,0,0},
   {WATER_LVL2, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[1]),0,0,0},
@@ -386,6 +392,7 @@ enum {
   CCMID_WL2,
   CCMID_PRS1,
   CCMID_MODE,
+  CCMID_RUNMODE,
   CCMID_BURNER,
   // CCMID_OPETemp1,
   // CCMID_OPETemp2,
@@ -473,13 +480,16 @@ const char ccmNameMODE[] PROGMEM="Mode";
 const char ccmTypeMODE[] PROGMEM="mode.mCD";
 const char ccmUnitMODE[] PROGMEM= "";
 
+const char ccmNameMODE[] PROGMEM="RunMode";
+const char ccmTypeMODE[] PROGMEM="runmode.mCD";
+const char ccmUnitMODE[] PROGMEM= "";
+
 const char ccmNameCnd[] PROGMEM= "NodeCondition";
 const char ccmTypeCnd[] PROGMEM= "cnd.mCD";
 const char ccmUnitCnd[] PROGMEM= "";
 
 
 void UserInit(){
-  Serial.println("UserInit() ENTER");
   //MAC address is printed on sticker of Ethernet Shield.
   //You must assign unique MAC address to each nodes.
   //MACアドレス設定、必ずEthernet Shieldに書かれた値を入力して下さい。
@@ -525,28 +535,22 @@ void UserInit(){
   // UECSsetCCM(true, CCMID_OPETemp6,ccmNameOpeTemp6, ccmTypeOpeTemp6, ccmUnitOpeTemp, 29, 1, A_10S_0);
   // UECSsetCCM(true, CCMID_OPETemp7,ccmNameOpeTemp7, ccmTypeOpeTemp7, ccmUnitOpeTemp, 29, 1, A_10S_0);
   // UECSsetCCM(true, CCMID_OPETemp8,ccmNameOpeTemp8, ccmTypeOpeTemp8, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  Serial.println("UserInit() EXIT");
 }
 
 
 void OnWebFormRecieved() {
-  Serial.println("OnWebFormRecieved() ENTER");
   U_ccmList[CCMID_BLOWER].value  = statusMOTO_ON_OFF_AUTO[0];
   U_ccmList[CCMID_PUMP].value    = statusMOTO_ON_OFF_AUTO[1];
   U_ccmList[CCMID_MODE].value    = modeRUN;
   ChangeValve();
-  Serial.println("OnWebFormRecieved() EXIT");
 }
 
 void UserEverySecond() {
-  Serial.println("UserEverySecond() ENTER");
   wdt_reset();
-  Serial.println("UserEverySecond() EXIT");
 }
 void UserEveryMinute() {
   float temp;
   int   mcp_id;
-  Serial.println("UserEveryMinute() ENTER");
   k33_ope();
   for(mcp_id=0;mcp_id<8;mcp_id++) {
     if (mcp96_present[mcp_id]) {
@@ -556,9 +560,7 @@ void UserEveryMinute() {
     }
     t1tValue[mcp_id] = temp * 10.0;
     U_ccmList[CCMID_TCTemp1+mcp_id].value = temp * 10.0;
-    Serial.print("T-Temp");Serial.print(mcp_id+1);Serial.println(" CHECK");
   }
-  Serial.println("UserEveryMinute() EXIT");
 }
 void UserEveryLoop() {
 }
@@ -569,39 +571,29 @@ void UserEveryLoop() {
 void loop(){
   int rc,co2lp,co2icb;
   int mcp_id;
-  //Serial.println("1");
   UECSloop();
   if (digitalRead(EMGSTOP)==LOW) emgstop(); // 緊急停止の確認　割り込みが効かないのでここに入れる。
-  //Serial.println("32768");
   a2in = analogRead(A2);
   U_ccmList[CCMID_FUNCSEL].value= a2in;
-  //Serial.println("-32768");
   disp_select(a2in);
-  Serial.println("256");
   if (digitalRead(PRSLVL1)==HIGH) {
     ShowPressLevel[0] = 0; // HIGH
   } else {
     ShowPressLevel[0] = 1; // LOW
   }
   U_ccmList[CCMID_PRS1].value = ShowPressLevel[0];
-  Serial.println("-256");
-  Serial.println("512");
   if (digitalRead(WLVL1)==HIGH) {
     ShowWaterLevel[0] = 0; // HIGH
   } else {
     ShowWaterLevel[0] = 1; // LOW
   }
   U_ccmList[CCMID_WL1].value = ShowWaterLevel[0];
-  Serial.println("-512");
-  Serial.println("1024");
   if (digitalRead(WLVL2)==HIGH) {
     ShowWaterLevel[1] = 0; // HIGH
   } else {
     ShowWaterLevel[1] = 1; // LOW
   }
   U_ccmList[CCMID_WL2].value = ShowWaterLevel[1];
-  Serial.println("-1024");
-  Serial.println("2048");
   if (digitalRead(BLOWER)==HIGH) {
     U_ccmList[CCMID_BLOWER].value = 1; // RUN
     statusMOTO_ON_OFF_AUTO[0] = 1;
@@ -609,8 +601,6 @@ void loop(){
     U_ccmList[CCMID_BLOWER].value = 2; // STOP
     statusMOTO_ON_OFF_AUTO[0] = 2;
   }
-  Serial.println("-2048");
-  Serial.println("4096");
   if (digitalRead(PUMP)==HIGH) {
     U_ccmList[CCMID_PUMP].value = 1; // RUN
     statusMOTO_ON_OFF_AUTO[1] = 1;
@@ -618,8 +608,6 @@ void loop(){
     U_ccmList[CCMID_PUMP].value = 2; // STOP
     statusMOTO_ON_OFF_AUTO[1] = 2;
   }
-  Serial.println("-4096");
-  Serial.println("8192");
   if (digitalRead(BURNER)==HIGH) {
     U_ccmList[CCMID_BURNER].value = 0;
     ShowBurner = 0; // STOP
@@ -627,9 +615,7 @@ void loop(){
     U_ccmList[CCMID_BURNER].value = 1;
     ShowBurner = 1; // RUN
   }
-  Serial.println("-8192");
   ChangeValve();
-  //Serial.println("-1");
 }
 
 void setup(){
@@ -639,23 +625,15 @@ void setup(){
   //  pinMode(26,OUTPUT);
   //  digitalWrite(26,LOW);
   configure_wdt();
-  Serial.begin(115200);
-  Serial.print("\n***ABCO2 START VERSION ");
-  Serial.println(VERSION);
-  Serial.println("setup() ENTER");
-  Serial.println("UECSsetup() ENTER");
   UECSsetup();
-  Serial.println("UECSsetup() EXIT");
   pinMode(A2,INPUT);
   for (i=0;i<8;i++) {
     VLVStatus[i] = 1;
   }
-  //  Serial.println("VLVStatus ALL 1");
   for (i=0;i<2;i++) {
     statusMOTO_ON_OFF_AUTO[i] = MOTO_STOP;
   }
   //  delay(500);
-  //  Serial.println("MOTO_ON_OFF_AUTO STOP");
   pinMode(2,INPUT_PULLUP);
   pinMode(3,INPUT_PULLUP);
   pinMode(18,INPUT_PULLUP);
@@ -665,7 +643,6 @@ void setup(){
   pinMode(WLVL2,INPUT);
   pinMode(PRSLVL1,INPUT);
   pinMode(PRSLVL2,INPUT);
-  //  Serial.println("INPUT PIN DEFINE");
 
   // Setup OUTPUT Pins
   for(i=22;i<=24;i++) {
@@ -676,12 +653,8 @@ void setup(){
     pinMode(i,OUTPUT);
     digitalWrite(i,LOW);
   }
-  //  Serial.println("OUTPUT PIN ALL LOW");
-  //  Serial.println("init_mcp9600() ENTER");
   init_mcp9600();
-  //  Serial.println("init_mcp9600() EXIT");
   sprintf(lcdtitle,"ABCO2 %6s",VERSION);
-  //  Serial.println(lcdtitle);
   lcd.init();
   lcd.backlight();
   lcd.setCursor(0,0);
@@ -689,7 +662,6 @@ void setup(){
   sprintf(lcdtext,"%d.%d.%d.%d",U_orgAttribute.ip[0],U_orgAttribute.ip[1],U_orgAttribute.ip[2],U_orgAttribute.ip[3]);
   lcd.setCursor(0,1);
   lcd.print(Ethernet.localIP());
-  Serial.println("setup() EXIT");
   //  lcd.print(lcdtext);
   //  attachInterrupt(0, emgstop, FALLING); // 緊急停止
 }
@@ -698,45 +670,34 @@ void setup(){
 //バルブ動作を変化させる関数
 //---------------------------------------------------------
 void ChangeValve(){
-  Serial.print("ChgVlv ");
   switch(U_ccmList[CCMID_MODE].value) {
   case 0:  // MODE AUTO
-    Serial.println("AUTO");
     return;
   case 1:  // MODE MANUAL
-    Serial.println("MANUAL");
     break;
   case 2:  // MODE0:
     setMode0();
-    Serial.println("M0");
     return;
   case 3:  // MODE1:
     setMode1();
-    Serial.println("M1");
     return;
   case 4:  // MODE2:
     setMode2();
-    Serial.println("M2");
     return;
   case 5:  // MODE3:
     setMode3();
-    Serial.println("M3");
     return;
   case 6:  // MODE4:
     setMode4();
-    Serial.println("M4");
     return;
   case 7:  // MODE5:
     setMode5();
-    Serial.println("M5");
     return;
   case 8:  // MODE6:
     setMode6();
-    Serial.println("M6");
     return;
   case 9:  // MODE7:
     setMode7();
-    Serial.println("M7");
     return;
   }
   switch(U_ccmList[CCMID_BLOWER].value) {
@@ -837,44 +798,33 @@ void ChangeValve(){
 }
 
 void run_blower(void) {
-  Serial.println("RUN BL");
   U_ccmList[CCMID_cnd].value |= 0b100000000;  // RUN
   digitalWrite(BLOWER,HIGH);
-  Serial.println("-16777216");
 }
 
 void stop_blower(void) {
-  Serial.println("33554432");
   U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111011111111;  // STOP
   digitalWrite(BLOWER,LOW);
-  Serial.println("-33554432");
 }
 
 void run_pump(void) {
-  Serial.println("67108864");
   U_ccmList[CCMID_cnd].value |= 0b10000000;  // RUN
   digitalWrite(D_PUMP,HIGH);
-  Serial.println("-67108864");
 }
 
 void stop_pump(void) {
-  Serial.println("134217728");
   U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111101111111;  // STOP
   digitalWrite(D_PUMP,LOW);
-  Serial.println("-134217728");
 }
 
 void Reset_lcdtext(void) {
   int i;
-  Serial.println("268435456");
   for(i=0;i<17;i++) {
     lcdtext[i] = (char)NULL;
   }
-  Serial.println("-268435456");
 }
 
 void emgstop(void) {
-  Serial.println("emgstop() ENTER");
   lcd.setCursor(0,1);
   Reset_lcdtext();
   lcd.print(lcdtext);
@@ -886,7 +836,6 @@ void emgstop(void) {
   if (digitalRead(EMGSTOP)==HIGH) {
     lcd.setCursor(0,1);
     lcd.print("EMG ABORT       ");
-    Serial.println("emgstop() RETURN");
     return;
   }
   lcd.print("BLOWER/PUMP STOP");
@@ -900,12 +849,10 @@ void emgstop(void) {
   U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111000111000;  // MOTORT and VALVE
   U_ccmList[CCMID_cnd].value |= 0b01000000000000000000000000000000;  // EMERGENCY STOP
   delay(2000);
-  Serial.println("emgstop() EXIT");
 }
 
 // Mode0 全閉
 void setMode0(void) {
-  Serial.println("65536");
   vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -915,12 +862,10 @@ void setMode0(void) {
   vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
   stop_blower();
   stop_pump();
-  Serial.println("-65536");
 }
 
 // Mode1 CO2貯蔵
 void setMode1(void) {
-  Serial.println("131072");
   vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV2_OPEN,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -930,12 +875,10 @@ void setMode1(void) {
   vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
   run_blower();
   run_pump();
-  Serial.println("-131072");
 }
 
 // Mode2 放散(1): チャンバーair導入
 void setMode2(void) {
-  Serial.println("262144");
   vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_OPEN,CCMID_cnd);
@@ -945,12 +888,10 @@ void setMode2(void) {
   vlv_ctrl(VLV7_OPEN,CCMID_cnd);
   run_blower();
   stop_pump();
-  Serial.println("-262144");
 }
 
 // Mode3 放散(2):外部air導入
 void setMode3(void) {
-  Serial.println("524288");
   vlv_ctrl(VLV1_OPEN,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -960,12 +901,10 @@ void setMode3(void) {
   vlv_ctrl(VLV7_OPEN,CCMID_cnd);
   run_blower();
   stop_pump();
-  Serial.println("-524288");
 }
 
 // Mode4 外気導入
 void setMode4(void) {
-  Serial.println("1048576");
   vlv_ctrl(VLV1_OPEN,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -975,12 +914,10 @@ void setMode4(void) {
   vlv_ctrl(VLV7_OPEN,CCMID_cnd);
   run_blower();
   stop_pump();
-  Serial.println("-1048576");
 }
 
 // Mode5 冷却
 void setMode5(void) {
-  Serial.println("2097152");
   vlv_ctrl(VLV1_OPEN,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -990,12 +927,10 @@ void setMode5(void) {
   vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
   run_blower();
   stop_pump();
-  Serial.println("-2097152");
 }
 
 // Mode6 全開
 void setMode6(void) {
-  Serial.println("4194304");
   vlv_ctrl(VLV1_OPEN,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -1005,12 +940,10 @@ void setMode6(void) {
   vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
   stop_blower();
   stop_pump();
-  Serial.println("-4194304");
 }
 
 // Mode7 緊急停止
 void setMode7(void) {
-  Serial.println("8388608");
   vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
   vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
@@ -1022,7 +955,6 @@ void setMode7(void) {
   U_ccmList[CCMID_cnd].value |= 0b01000000000000000000000000000000;  // EMERGENCY STOP
   stop_blower();
   stop_pump();
-  Serial.println("-8388608");
 }
 
 void configure_wdt(void) {
