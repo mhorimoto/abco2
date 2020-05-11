@@ -1,6 +1,7 @@
 void disp_select(int menusel) {
   int smenu;
   int pday,psec;
+  char tempbuf[21];
   extern char *StrMODE[];
   //  Serial.println("64");
   smenu = (menusel/100)+1;
@@ -23,8 +24,20 @@ void disp_select(int menusel) {
   } else if ((smenu>=4) and (smenu<=6)) {
     Reset_lcdtext();
     lcd.setCursor(0,1);
-    sprintf(lcdtext,"%16s",StrMODE[3]);
-    lcd.print(lcdtext);
+    switch(U_ccmList[CCMID_RUNMODE].value) {
+    case 0:  // 運転種別：自動
+      sprintf(lcdtext,"AUTO MODE%1d     ",U_ccmList[CCMID_MODE].value);
+      lcd.print(lcdtext);
+      break;
+    case 1:  // 運転種別：手動
+      sprintf(lcdtext,"MANUAL MODE%1d   ",U_ccmList[CCMID_MODE].value);
+      lcd.print(lcdtext);
+      break;
+    case 2: // 運転種別：自由
+      sprintf(lcdtext,"FREE %-04X      ",String(U_ccmList[CCMID_cnd].value,HEX));
+      lcd.print(lcdtext);
+      break;
+    }
   } else {
     lcd.setCursor(0,0);
     sprintf(lcdtitle,"ABCO2 %6s",VERSION);

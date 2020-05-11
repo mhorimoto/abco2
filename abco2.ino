@@ -2,6 +2,8 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
+//   E-STOP以外の時にE-STOP BITが消えるようにした。(D0050)
+//   手動の時にモード切替が出来るようにした。モードがLCD表示される。(D0048)
 //   運転種別が自動のときだけ (D0047)
 //   昼間はMode2,夜間はMode0かMode1になるように。 (D0046)
 //   mcp_ope.ino,k33_ope.inoのシリアル出力を抑制 (D0045)
@@ -44,8 +46,8 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0047";
-const signed long ccmver = 0x68010 + 47;
+const char *VERSION = "D0050";
+const signed long ccmver = 0x68010 + 50;
 
 /////////////////////////////////////
 // Hardware Define
@@ -124,8 +126,8 @@ const char WATER_LVL2[] PROGMEM = "液面レベル2";
 const char WLVL_HIGH[] PROGMEM = "HIGH";
 const char WLVL_LOW[] PROGMEM  = "LOW";
 const char *StrWATER_LVL[2] = {
-  WLVL_HIGH,
-  WLVL_LOW
+			       WLVL_LOW,
+			       WLVL_HIGH
 };
 boolean waterLevel[2];          // I/Oから信号を受電するため
 signed long ShowWaterLevel[2];  // 表示のインデックスのため
@@ -136,8 +138,8 @@ const char PRESS_LVL[] PROGMEM  = "圧力";
 const char PRESS_HIGH[] PROGMEM = "HIGH";
 const char PRESS_LOW[] PROGMEM  = "LOW";
 const char *StrPRESS_LVL[2] = {
-  PRESS_HIGH,
-  PRESS_LOW
+			       PRESS_LOW,
+			       PRESS_HIGH
 };
 boolean pressLevel;          // I/Oから信号を受電するため
 signed long ShowPressLevel[2];  // 表示のインデックスのため
@@ -314,7 +316,8 @@ const char MODE4[] PROGMEM="MODE-4";
 const char MODE5[] PROGMEM="MODE-5";
 const char MODE6[] PROGMEM="MODE-6";
 const char MODE7[] PROGMEM="MODE-7";
-const char *StrMODE[8] = {
+const char MODEX[] PROGMEM="FREE";
+const char *StrMODE[9] = {
   MODE0,     //  0
   MODE1,     //  1
   MODE2,     //  2
@@ -322,16 +325,19 @@ const char *StrMODE[8] = {
   MODE4,     //  4
   MODE5,     //  5
   MODE6,     //  6
-  MODE7      //  7
+  MODE7,     //  7
+  MODEX      //  8
 };
 signed long modeRUN,PmodeRUN;
 
 const char StrRUNMODE[]  PROGMEM="運転種別";
 const char RUNAUTO[]     PROGMEM="自動";
 const char RUNMANU[]     PROGMEM="手動";
-const char *StrRUN[2] = {
+const char RUNFREE[]     PROGMEM="自由";
+const char *StrRUN[3] = {
   RUNAUTO,  //  0
   RUNMANU,  //  1
+  RUNFREE   //  2
 };
 signed long runMODE,PrunMODE;
 
@@ -339,8 +345,8 @@ signed long runMODE,PrunMODE;
 const int U_HtmlLine = 29; //Total number of HTML table rows.
 struct UECSUserHtml U_html[U_HtmlLine]={
   //{名前,    入出力形式,     単位,     詳細説明, 選択肢文字列,  選択肢数,値,	      最小値,最大値,小数桁数}
-  {StrRUNMODE,UECSSELECTDATA, NONES,    VLVNOTE0, StrRUN,        2,       &(runMODE), 0,     0,     0},
-  {StrMODESEL,UECSSELECTDATA, NONES,    VLVNOTE0, StrMODE,       8,       &(modeRUN), 0,     0,     0},
+  {StrRUNMODE,UECSSELECTDATA, NONES,    VLVNOTE0, StrRUN,        3,       &(runMODE), 0,     0,     0},
+  {StrMODESEL,UECSSELECTDATA, NONES,    VLVNOTE0, StrMODE,       9,       &(modeRUN), 0,     0,     0},
   {MOTONAME0, UECSSELECTDATA, NONES,    VLVNOTE0, StrMOTOSW,     3,       &(statusMOTO_ON_OFF_AUTO[0]),0,0,0},
   {MOTONAME1, UECSSELECTDATA, NONES,    VLVNOTE0, StrMOTOSW,     3,       &(statusMOTO_ON_OFF_AUTO[1]),0,0,0},
   {VLVNAME0,  UECSSELECTDATA, NONES,    VLVNOTE0, StrVLV_SELECT, 3, &(set_VLV_SELECT[0]), 0, 0, 0},
@@ -679,7 +685,7 @@ void setup(){
   pinMode(3,INPUT_PULLUP);
   pinMode(18,INPUT_PULLUP);
   pinMode(BURNER,INPUT_PULLUP);
-  pinMode(ALRM_MISSFIRE,INPUT_PULLUP);
+  pinMode(ALARM_MISSFIRE,INPUT_PULLUP);
   pinMode(WLVL1,INPUT);
   pinMode(WLVL2,INPUT);
   pinMode(PRSLVL1,INPUT);
@@ -711,130 +717,134 @@ void setup(){
 //バルブ動作を変化させる関数
 //---------------------------------------------------------
 void ChangeValve(){
-  if (U_ccmList[CCMID_RUNMODE].value != 0) {
-    return;
+  switch(U_ccmList[CCMID_RUNMODE].value) {
+  case 1: //  手動モード切替
+    switch(U_ccmList[CCMID_MODE].value) {
+    case 0:  // MODE0:
+      setMode0();
+      return;
+    case 1:  // MODE1:
+      setMode1();
+      return;
+    case 2:  // MODE2:
+      setMode2();
+      return;
+    case 3:  // MODE3:
+      setMode3();
+      return;
+    case 4:  // MODE4:
+      setMode4();
+      return;
+    case 5:  // MODE5:
+      setMode5();
+      return;
+    case 6:  // MODE6:
+      setMode6();
+      return;
+    case 7:  // MODE7:
+      setMode7();
+      return;
+    }
+    break;
+  case 2:// 自由切替
+    U_ccmList[CCMID_MODE].value = 8; // FREE-MODE
+    modeRUN = 8;
+    switch(U_ccmList[CCMID_BLOWER].value) {
+    case 1: //MOTO_RUN
+      run_blower();
+      break;
+    case 2: //MOTO_STOP
+      stop_blower();
+      break;
+    }
+    switch(U_ccmList[CCMID_PUMP].value) {
+    case 1: //MOTO_RUN
+      run_pump();
+      break;
+    case 2: //MOTO_STOP
+      stop_pump();
+      break;
+    }
+    
+    switch(set_VLV_SELECT[0]) {
+    case 0:
+      vlv_ctrl(VLV1_UNKNOWN,CCMID_cnd);
+      break;
+    case 1:
+      vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
+      break;
+    case 2:
+      vlv_ctrl(VLV1_OPEN,CCMID_cnd);
+      break;
+    }
+    switch(set_VLV_SELECT[1]) {
+    case 0:
+      vlv_ctrl(VLV2_UNKNOWN,CCMID_cnd);
+      break;
+    case 1:
+      vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
+      break;
+    case 2:
+      vlv_ctrl(VLV2_OPEN,CCMID_cnd);
+      break;
+    }
+    switch(set_VLV_SELECT[2]) {
+    case 0:
+      vlv_ctrl(VLV3_UNKNOWN,CCMID_cnd);
+      break;
+    case 1:
+      vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
+      break;
+    case 2:
+      vlv_ctrl(VLV3_OPEN,CCMID_cnd);
+      break;
+    }
+    switch(set_VLV_SELECT[3]) {
+    case 0:
+      vlv_ctrl(VLV4_UNKNOWN,CCMID_cnd);
+      break;
+    case 1:
+      vlv_ctrl(VLV4_CLOSE,CCMID_cnd);
+      break;
+    case 2:
+      vlv_ctrl(VLV4_OPEN,CCMID_cnd);
+      break;
+    }
+    switch(set_VLV_SELECT[4]) {
+    case 0:
+      vlv_ctrl(VLV5_UNKNOWN,CCMID_cnd);
+      break;
+    case 1:
+      vlv_ctrl(VLV5_CLOSE,CCMID_cnd);
+      break;
+    case 2:
+      vlv_ctrl(VLV5_OPEN,CCMID_cnd);
+      break;
+    }
+    switch(set_VLV_SELECT[5]) {
+    case 0:
+      vlv_ctrl(VLV6_UNKNOWN,CCMID_cnd);
+      break;
+    case 1:
+      vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
+      break;
+    case 2:
+      vlv_ctrl(VLV6_OPEN,CCMID_cnd);
+      break;
+    }
+    switch(set_VLV_SELECT[6]) {
+    case 0:
+      vlv_ctrl(VLV7_UNKNOWN,CCMID_cnd);
+      break;
+    case 1:
+      vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
+      break;
+    case 2:
+      vlv_ctrl(VLV7_OPEN,CCMID_cnd);
+      break;
+    }
+    break;
   }
-  switch(U_ccmList[CCMID_MODE].value) {
-  case 0:  // MODE0:
-    setMode0();
-    return;
-  case 1:  // MODE1:
-    setMode1();
-    return;
-  case 2:  // MODE2:
-    setMode2();
-    return;
-  case 3:  // MODE3:
-    setMode3();
-    return;
-  case 4:  // MODE4:
-    setMode4();
-    return;
-  case 5:  // MODE5:
-    setMode5();
-    return;
-  case 6:  // MODE6:
-    setMode6();
-    return;
-  case 7:  // MODE7:
-    setMode7();
-    return;
-  }
-  switch(U_ccmList[CCMID_BLOWER].value) {
-  case 1: //MOTO_RUN
-    run_blower();
-    break;
-  case 2: //MOTO_STOP
-    stop_blower();
-    break;
-  }
-  switch(U_ccmList[CCMID_PUMP].value) {
-  case 1: //MOTO_RUN
-    run_pump();
-    break;
-  case 2: //MOTO_STOP
-    stop_pump();
-    break;
-  }
-
-  switch(set_VLV_SELECT[0]) {
-  case 0:
-    vlv_ctrl(VLV1_UNKNOWN,CCMID_cnd);
-    break;
-  case 1:
-    vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
-    break;
-  case 2:
-    vlv_ctrl(VLV1_OPEN,CCMID_cnd);
-    break;
-  }
-  switch(set_VLV_SELECT[1]) {
-  case 0:
-    vlv_ctrl(VLV2_UNKNOWN,CCMID_cnd);
-    break;
-  case 1:
-    vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
-    break;
-  case 2:
-    vlv_ctrl(VLV2_OPEN,CCMID_cnd);
-    break;
-  }
-  switch(set_VLV_SELECT[2]) {
-  case 0:
-    vlv_ctrl(VLV3_UNKNOWN,CCMID_cnd);
-    break;
-  case 1:
-    vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
-    break;
-  case 2:
-    vlv_ctrl(VLV3_OPEN,CCMID_cnd);
-    break;
-  }
-  switch(set_VLV_SELECT[3]) {
-  case 0:
-    vlv_ctrl(VLV4_UNKNOWN,CCMID_cnd);
-    break;
-  case 1:
-    vlv_ctrl(VLV4_CLOSE,CCMID_cnd);
-    break;
-  case 2:
-    vlv_ctrl(VLV4_OPEN,CCMID_cnd);
-    break;
-  }
-  switch(set_VLV_SELECT[4]) {
-  case 0:
-    vlv_ctrl(VLV5_UNKNOWN,CCMID_cnd);
-    break;
-  case 1:
-    vlv_ctrl(VLV5_CLOSE,CCMID_cnd);
-    break;
-  case 2:
-    vlv_ctrl(VLV5_OPEN,CCMID_cnd);
-    break;
-  }
-  switch(set_VLV_SELECT[5]) {
-  case 0:
-    vlv_ctrl(VLV6_UNKNOWN,CCMID_cnd);
-    break;
-  case 1:
-    vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
-    break;
-  case 2:
-    vlv_ctrl(VLV6_OPEN,CCMID_cnd);
-    break;
-  }
-  switch(set_VLV_SELECT[6]) {
-  case 0:
-    vlv_ctrl(VLV7_UNKNOWN,CCMID_cnd);
-    break;
-  case 1:
-    vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
-    break;
-  case 2:
-    vlv_ctrl(VLV7_OPEN,CCMID_cnd);
-    break;
-  }
-  //  VLVStatus[0] = U_ccmList[CCMID_cnd].value;
 }
 
 void run_blower(void) {
@@ -903,6 +913,7 @@ void setMode0(void) {
   vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
   stop_blower();
   stop_pump();
+  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
 }
 
 // Mode1 CO2貯蔵
@@ -917,6 +928,7 @@ void setMode1(void) {
   vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
   run_blower();
   run_pump();
+  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
 }
 
 // Mode2 放散(1): チャンバーair導入
@@ -931,6 +943,7 @@ void setMode2(void) {
   vlv_ctrl(VLV7_OPEN,CCMID_cnd);
   run_blower();
   stop_pump();
+  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
 }
 
 // Mode3 放散(2):外部air導入
@@ -945,6 +958,7 @@ void setMode3(void) {
   vlv_ctrl(VLV7_OPEN,CCMID_cnd);
   run_blower();
   stop_pump();
+  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
 }
 
 // Mode4 外気導入
@@ -959,6 +973,7 @@ void setMode4(void) {
   vlv_ctrl(VLV7_OPEN,CCMID_cnd);
   run_blower();
   stop_pump();
+  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
 }
 
 // Mode5 冷却
@@ -973,6 +988,7 @@ void setMode5(void) {
   vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
   run_blower();
   stop_pump();
+  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
 }
 
 // Mode6 全開
@@ -987,6 +1003,7 @@ void setMode6(void) {
   vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
   stop_blower();
   stop_pump();
+  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
 }
 
 // Mode7 緊急停止
@@ -999,7 +1016,7 @@ void setMode7(void) {
   vlv_ctrl(VLV5_OPEN,CCMID_cnd);
   vlv_ctrl(VLV6_OPEN,CCMID_cnd);
   vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
-  U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111000111000;  // MOTORT and VALVE
+  U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111000111000;  // MOTOR and VALVE
   U_ccmList[CCMID_cnd].value |= 0b01000000000000000000000000000000;  // EMERGENCY STOP
   stop_blower();
   stop_pump();

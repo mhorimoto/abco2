@@ -25,7 +25,7 @@
 #define RLY3    24   /* RELAY RESERVED */
 #define UECSDHCP 25   /* UECS RESERVED */
 #define UECSSAFE 26   /* UECS RESERVED */
-#define RLY6    27   /* RELAY RESERVED */
+#define BURNER  27   /* RELAY RESERVED */
 #define RLY7    28   /* RELAY RESERVED */
 #define RLY8    29   /* RELAY RESERVED */
 #define VLV1A   30   /* VALVE1 OPENNER A */
@@ -44,10 +44,10 @@
 #define VLV7B   43   /* VALVE7 OPENNER B */
 #define VLV8A   44   /* VALVE8 OPENNER A */
 #define VLV8B   45   /* VALVE8 OPENNER B */
-#define WLVL1   47   /* 液面レベル1 */
+#define WLVL1   46   /* 液面レベル1 */
 #define WLVL2   47   /* 液面レベル2 */
-#define PSLVL1  48   /* 圧力センサ1 */
-#define PSLVL2  49   /* 圧力センサ2 */
+#define PRSLVL1 48   /* 圧力センサ1 */
+#define PRSLVL2 49   /* 圧力センサ2 */
 #define MISO    50   /* W5500 LAN Interface */
 #define MOSI    51   /* W5500 LAN Interface */
 #define SCK     52   /* W5500 LAN Interface */
@@ -113,13 +113,6 @@
 #define  VLV7_UNKNOWN 370
 #define  VLV7_OPEN    371
 #define  VLV7_CLOSE   372
-
-#define  ALRM_MISSFIRE 19
-#define  BURNER        27
-#define  WLVL1         46
-#define  WLVL2         47
-#define  PRSLVL1       48
-#define  PRSLVL2       49
 
 #define  RMODE0     10000
 #define  RMODE1     10001
