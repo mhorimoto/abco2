@@ -46,8 +46,8 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0050";
-const signed long ccmver = 0x68010 + 50;
+const char *VERSION = "D0051";
+const signed long ccmver = 0x68010 + 51;
 
 /////////////////////////////////////
 // Hardware Define
@@ -572,27 +572,27 @@ void UserEveryMinute() {
   int   mcp_id;
   RtcDateTime now = Rtc.GetDateTime();
   if (U_ccmList[CCMID_RUNMODE].value == 0) { // RUN MODE is AUTO
-    Serial.begin(115200);
-    Serial.print(now.Hour(),DEC);
+    //    Serial.begin(115200);
+    //Serial.print(now.Hour(),DEC);
     if ((now.Hour()>6)&&(now.Hour()<18)) {
-      Serial.println(" setMode2()");
+      //Serial.println(" setMode2()");
       U_ccmList[CCMID_MODE].value = 2;
       modeRUN = 2;
       setMode2();
     } else {
       if (U_ccmList[CCMID_BURNER].value == 0) { // Burner STOPPED
-	Serial.println(" and BURNER STOPPED setMode0()");
+	//Serial.println(" and BURNER STOPPED setMode0()");
 	U_ccmList[CCMID_MODE].value = 0;
 	modeRUN = 0;
 	setMode0();
       } else {      // Burner RUNNING
-	Serial.println(" and BURNER RUNNING setMode1()");
+	//Serial.println(" and BURNER RUNNING setMode1()");
 	U_ccmList[CCMID_MODE].value = 1;
 	modeRUN = 1;
 	setMode1();
       }
     }
-    Serial.end();
+    //Serial.end();
   }
   k33_ope();
   for(mcp_id=0;mcp_id<8;mcp_id++) {
