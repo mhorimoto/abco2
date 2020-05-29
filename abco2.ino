@@ -2,6 +2,7 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
+//   NTPで時刻合わせを行うように変更 (D0053)
 //   起動直後は、Mode6(全開)から開始するように変更 (D0052)
 //   E-STOP以外の時にE-STOP BITが消えるようにした。(D0050)
 //   手動の時にモード切替が出来るようにした。モードがLCD表示される。(D0048)
@@ -34,6 +35,7 @@
 #include <Adafruit_I2CDevice.h>
 #include <Adafruit_I2CRegister.h>
 #include <Adafruit_MCP9600.h>
+
 #include "abco2.h"
 
 uint8_t mcusr_mirror __attribute__ ((section (".noinit")));
@@ -47,8 +49,8 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0052";
-const signed long ccmver = 0x68010 + 52;
+const char *VERSION = "D0053";
+const signed long ccmver = 0x68010 + 53;
 
 /////////////////////////////////////
 // Hardware Define
@@ -64,6 +66,20 @@ AT24CX           atmem(7,32);
 Adafruit_MCP9600 mcp[8];
 int mcp96_addr[]={0x60,0x61,0x62,0x63,0x64,0x65,0x66,0x67};
 boolean mcp96_present[8];  // true:present, false:absent
+
+/////////
+// NTP
+/////////
+#define NTPSERVER_NAME_LENGTH 32
+#define NTPSERVER_NAME  0xfe0
+#define NTPLOCAL_PORT   8123
+const int NTP_PACKET_SIZE = 48; // NTP time stamp is in the first 48 bytes of the message
+byte packetBuffer[NTP_PACKET_SIZE]; //buffer to hold incoming and outgoing packets
+char ntpServer[NTPSERVER_NAME_LENGTH];
+//char dod[11],tod[9];      // Date of Date,Time of Date
+int  ntprc;
+EthernetUDP ntp;
+
 
 /////////////////////////////////////
 //IP reset jupmer pin setting
@@ -375,14 +391,6 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   {WATER_LVL1, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[0]),0,0,0},
   {WATER_LVL2, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[1]),0,0,0},
   {PRESS_LVL,  UECSSHOWSTRING, NONES, NONES, StrPRESS_LVL,2,&(ShowPressLevel[0]),0,0,0},
-  // {VLVSTSNAME0, UECSSHOWSTRING, NONES, VLVSTSNOTE0,StrVLVSTS,3,&(VLVStatus[0]),0,0,0},
-  // {VLVSTSNAME1, UECSSHOWSTRING, NONES, VLVSTSNOTE1,StrVLVSTS,3,&(VLVStatus[1]),0,0,0},
-  // {VLVSTSNAME2, UECSSHOWSTRING, NONES, VLVSTSNOTE2,StrVLVSTS,3,&(VLVStatus[2]),0,0,0},
-  // {VLVSTSNAME3, UECSSHOWSTRING, NONES, VLVSTSNOTE3,StrVLVSTS,3,&(VLVStatus[3]),0,0,0},
-  // {VLVSTSNAME4, UECSSHOWSTRING, NONES, VLVSTSNOTE4,StrVLVSTS,3,&(VLVStatus[4]),0,0,0}, // #30
-  // {VLVSTSNAME5, UECSSHOWSTRING, NONES, VLVSTSNOTE5,StrVLVSTS,3,&(VLVStatus[5]),0,0,0},
-  // {VLVSTSNAME6, UECSSHOWSTRING, NONES, VLVSTSNOTE6,StrVLVSTS,3,&(VLVStatus[6]),0,0,0},
-  // {VLVSTSNAME7, UECSSHOWSTRING, NONES, VLVSTSNOTE7,StrVLVSTS,3,&(VLVStatus[7]),0,0,0},
 };
 
 
@@ -412,14 +420,6 @@ enum {
   CCMID_MODE,
   CCMID_RUNMODE,
   CCMID_BURNER,
-  // CCMID_OPETemp1,
-  // CCMID_OPETemp2,
-  // CCMID_OPETemp3,
-  // CCMID_OPETemp4,
-  // CCMID_OPETemp5,
-  // CCMID_OPETemp6,
-  // CCMID_OPETemp7,
-  // CCMID_OPETemp8,
   CCMID_dummy,
 };
 
@@ -445,24 +445,6 @@ const char ccmNameTemp7[] PROGMEM= "T7温度";
 const char ccmTypeTemp7[] PROGMEM= "TCTemp7.mCD";
 const char ccmNameTemp8[] PROGMEM= "T8温度";
 const char ccmTypeTemp8[] PROGMEM= "TCTemp8.mCD";
-
-// const char ccmUnitOpeTemp[] PROGMEM= "C";
-// const char ccmNameOpeTemp1[] PROGMEM= "T1動作温度";
-// const char ccmTypeOpeTemp1[] PROGMEM= "OPETemp1.mCD";
-// const char ccmNameOpeTemp2[] PROGMEM= "T2動作温度";
-// const char ccmTypeOpeTemp2[] PROGMEM= "OPETemp2.mCD";
-// const char ccmNameOpeTemp3[] PROGMEM= "T3動作温度";
-// const char ccmTypeOpeTemp3[] PROGMEM= "OPETemp3.mCD";
-// const char ccmNameOpeTemp4[] PROGMEM= "T4動作温度";
-// const char ccmTypeOpeTemp4[] PROGMEM= "OPETemp4.mCD";
-// const char ccmNameOpeTemp5[] PROGMEM= "T5動作温度";
-// const char ccmTypeOpeTemp5[] PROGMEM= "OPETemp5.mCD";
-// const char ccmNameOpeTemp6[] PROGMEM= "T6動作温度";
-// const char ccmTypeOpeTemp6[] PROGMEM= "OPETemp6.mCD";
-// const char ccmNameOpeTemp7[] PROGMEM= "T7動作温度";
-// const char ccmTypeOpeTemp7[] PROGMEM= "OPETemp7.mCD";
-// const char ccmNameOpeTemp8[] PROGMEM= "T8動作温度";
-// const char ccmTypeOpeTemp8[] PROGMEM= "OPETemp8.mCD";
 
 const char ccmUnitCO2[] PROGMEM= "ppm";
 const char ccmNameCO2LP[] PROGMEM= "CO2LP";
@@ -546,14 +528,6 @@ void UserInit(){
   UECSsetCCM(true, CCMID_WL2,     ccmNameWL2,   ccmTypeWL2,   NONES,       29, 0, A_10S_0);
   UECSsetCCM(true, CCMID_PRS1,    ccmNamePRS1,  ccmTypePRS1,  NONES,       29, 0, A_10S_0);
   UECSsetCCM(true, CCMID_BURNER,  ccmNameBURNER,ccmTypeBURNER,NONES,       29, 0, A_10S_0);
-  // UECSsetCCM(true, CCMID_OPETemp1,ccmNameOpeTemp1, ccmTypeOpeTemp1, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  // UECSsetCCM(true, CCMID_OPETemp2,ccmNameOpeTemp2, ccmTypeOpeTemp2, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  // UECSsetCCM(true, CCMID_OPETemp3,ccmNameOpeTemp3, ccmTypeOpeTemp3, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  // UECSsetCCM(true, CCMID_OPETemp4,ccmNameOpeTemp4, ccmTypeOpeTemp4, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  // UECSsetCCM(true, CCMID_OPETemp5,ccmNameOpeTemp5, ccmTypeOpeTemp5, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  // UECSsetCCM(true, CCMID_OPETemp6,ccmNameOpeTemp6, ccmTypeOpeTemp6, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  // UECSsetCCM(true, CCMID_OPETemp7,ccmNameOpeTemp7, ccmTypeOpeTemp7, ccmUnitOpeTemp, 29, 1, A_10S_0);
-  // UECSsetCCM(true, CCMID_OPETemp8,ccmNameOpeTemp8, ccmTypeOpeTemp8, ccmUnitOpeTemp, 29, 1, A_10S_0);
 }
 
 
@@ -723,8 +697,10 @@ void setup(){
   sprintf(lcdtext,"%d.%d.%d.%d",U_orgAttribute.ip[0],U_orgAttribute.ip[1],U_orgAttribute.ip[2],U_orgAttribute.ip[3]);
   lcd.setCursor(0,1);
   lcd.print(Ethernet.localIP());
-  //  lcd.print(lcdtext);
-  //  attachInterrupt(0, emgstop, FALLING); // 緊急停止
+  ntprc = ntp_ope();
+  wdt_reset();
+  lcd.setCursor(0,1);
+  lcd.print("EXIT setup()    ");
 }
 
 //---------------------------------------------------------
