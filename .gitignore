@@ -1,4 +1,4 @@
 *~
-abco2.arduino.avr.mega.elf
-abco2.arduino.avr.mega.hex
-abco2.arduino.avr.mega.with_bootloader.hex
+*.avr.mega.elf
+*.avr.mega.hex
+*.avr.mega.with_bootloader.hex

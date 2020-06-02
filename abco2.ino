@@ -95,12 +95,12 @@ const byte U_InitPin_Sense=LOW;
 ////////////////////////////////////
 //Node basic infomation
 ///////////////////////////////////
-const char U_name[] PROGMEM= "ABCO2A04";//MAX 20 chars
+const char U_name[] PROGMEM= "ABCO2A05";//MAX 20 chars
 const char U_vender[] PROGMEM= "HOLLY";//MAX 20 chars
 const char U_uecsid[] PROGMEM= "10100C009999";//12 chars fixed
 const char U_footnote[] PROGMEM= "";
 //const int U_footnoteLetterNumber = 48;//Abolished after Ver 0.6
-char U_nodename[20] = "ABCO2A04";//MAX 19chars
+char U_nodename[20] = "ABCO2A05";//MAX 19chars
 UECSOriginalAttribute U_orgAttribute;
 
 //////////////////////////////////
@@ -206,6 +206,20 @@ const char CO2HUMI_UNIT[] PROGMEM = "%RH";
 signed long co2temp;
 signed long co2humi;
 
+// 昼夜の時刻設定
+const char DATEMODE[] PROGMEM = "昼夜設定";
+const char DATEAUTO[] PROGMEM = "自動判定";
+const char DATEMANU[] PROGMEM = "任意指定";
+const char *StrDATEMODE[2] = {
+  DATEAUTO,
+  DATEMANU
+};
+signed long vDateMode;
+
+const char DAYSTART[] PROGMEM = "昼開始時刻";
+const char NIGHTSTART[] PROGMEM = "夜間開始時刻";
+int daystart_hour;
+int nightstart_hour;
 
 //バルブの状態表示
 //UECSSHOWSTRING
@@ -392,6 +406,7 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   {WATER_LVL1, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[0]),0,0,0},
   {WATER_LVL2, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[1]),0,0,0},
   {PRESS_LVL,  UECSSHOWSTRING, NONES, NONES, StrPRESS_LVL,2,&(ShowPressLevel[0]),0,0,0},
+  {DATEMODE,   UECSSELECTDATA, NONES, VLVNOTE6,StrDATEMODE, 2, &(vDateMode), 0, 0, 0},
 };
 
 
@@ -421,6 +436,8 @@ enum {
   CCMID_MODE,
   CCMID_RUNMODE,
   CCMID_BURNER,
+  CCMID_DAYSTART,
+  CCMID_NIGHTSTART,
   CCMID_dummy,
 };
 
@@ -485,6 +502,14 @@ const char ccmNameRunMODE[] PROGMEM="RunMode";
 const char ccmTypeRunMODE[] PROGMEM="runmode.mCD";
 const char ccmUnitRunMODE[] PROGMEM= "";
 
+const char ccmNameDayStart[] PROGMEM="昼間開始時刻";
+const char ccmTypeDayStart[] PROGMEM="dayStart.mCD";
+const char ccmUnitDayStart[] PROGMEM="時";
+
+const char ccmNameNightStart[] PROGMEM="夜間開始時刻";
+const char ccmTypeNightStart[] PROGMEM="nightStart.mCD";
+const char ccmUnitNightStart[] PROGMEM="時";
+
 const char ccmNameCnd[] PROGMEM= "NodeCondition";
 const char ccmTypeCnd[] PROGMEM= "cnd.mCD";
 const char ccmUnitCnd[] PROGMEM= "";
@@ -508,6 +533,7 @@ void UserInit(){
   U_orgAttribute.mac[4] = 0x00;
   U_orgAttribute.mac[5] = 0x02;
 
+  wdt_reset();
   //Set ccm list
   UECSsetCCM(true, CCMID_cnd   ,  ccmNameCnd ,  ccmTypeCnd ,  ccmUnitCnd , 29, 0, A_1S_0);
   UECSsetCCM(true, CCMID_MODE,    ccmNameMODE,  ccmTypeMODE,  ccmUnitMODE, 28, 0, A_1S_0);
@@ -550,8 +576,8 @@ void UserEveryMinute() {
   if (U_ccmList[CCMID_RUNMODE].value == 0) { // RUN MODE is AUTO
     //    Serial.begin(115200);
     //Serial.print(now.Hour(),DEC);
-    //if ((now.Hour()>6)&&(now.Hour()<18)) {
-    if ((now.Hour()>18)&&(now.Hour()<6)) { // For Debug
+    if ((now.Hour()>6)&&(now.Hour()<18)) {
+      //if ((now.Hour()>18)&&(now.Hour()<6)) { // For Debug
       //Serial.println(" setMode2()");
       U_ccmList[CCMID_MODE].value = 2;
       modeRUN = 2;
