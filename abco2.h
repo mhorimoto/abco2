@@ -17,7 +17,7 @@
 #define VLV7OLS 16   /* VLV7 OLS(バルブ全開) */
 #define VLV7SLS 17   /* VLV7 SLS(バルブ全閉) */
 #define CANCEL  18   /* CANCEL BUTTON */
-#define ALARM_MISSFIRE     19   /* 着火エラー */
+#define BURNER  19   /* RELAY RESERVED */
 #define SDA     20   /* I2C Data  LCD,熱電対,K33LP,K33ICB */
 #define SCL     21   /* I2C Clock */
 #define BLOWER  22   /* BLOWER MOTOR RELAY-1 */
@@ -25,7 +25,7 @@
 #define RLY3    24   /* RELAY RESERVED */
 #define UECSDHCP 25   /* UECS RESERVED */
 #define UECSSAFE 26   /* UECS RESERVED */
-#define BURNER  27   /* RELAY RESERVED */
+#define ALARM_MISSFIRE     27   /* 着火エラー */
 #define RLY7    28   /* RELAY RESERVED */
 #define RLY8    29   /* RELAY RESERVED */
 #define VLV1A   30   /* VALVE1 OPENNER A */

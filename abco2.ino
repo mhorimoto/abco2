@@ -2,6 +2,7 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
+//   BURNERのport間違いを修正 (D0054)
 //   NTPで時刻合わせを行うように変更 (D0053)
 //   起動直後は、Mode6(全開)から開始するように変更 (D0052)
 //   E-STOP以外の時にE-STOP BITが消えるようにした。(D0050)
@@ -49,8 +50,8 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0053";
-const signed long ccmver = 0x68010 + 53;
+const char *VERSION = "D0054";
+const signed long ccmver = 0x68010 + 54;
 
 /////////////////////////////////////
 // Hardware Define
@@ -549,7 +550,8 @@ void UserEveryMinute() {
   if (U_ccmList[CCMID_RUNMODE].value == 0) { // RUN MODE is AUTO
     //    Serial.begin(115200);
     //Serial.print(now.Hour(),DEC);
-    if ((now.Hour()>6)&&(now.Hour()<18)) {
+    //if ((now.Hour()>6)&&(now.Hour()<18)) {
+    if ((now.Hour()>18)&&(now.Hour()<6)) { // For Debug
       //Serial.println(" setMode2()");
       U_ccmList[CCMID_MODE].value = 2;
       modeRUN = 2;
