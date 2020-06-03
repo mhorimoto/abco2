@@ -3,6 +3,7 @@
 //[概要]
 // ABCO2の基幹的プログラム
 //   モード切替時刻設定を任意に出来るように (D0056)
+//   定義をabco2.hに移行した。(D0055C)
 //   運転モードの自動切り替えを1分毎から1秒毎確認に変更(D0055)
 //   BURNERのport間違いを修正 (D0054)
 //   NTPで時刻合わせを行うように変更 (D0053)
@@ -52,7 +53,7 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0055A";
+const char *VERSION = "D0055C";
 const signed long ccmver = 0x68010 + 55;
 
 /////////////////////////////////////
