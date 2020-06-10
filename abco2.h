@@ -366,8 +366,8 @@ signed long modeRUN,PmodeRUN;
 
 const char StrRUNMODE[]  PROGMEM="運転種別";
 const char RUNAUTO[]     PROGMEM="自動";
-const char RUNMANU[]     PROGMEM="手動";
-const char RUNFREE[]     PROGMEM="自由";
+const char RUNMANU[]     PROGMEM="プリセット";
+const char RUNFREE[]     PROGMEM="手動";
 const char *StrRUN[3] = {
   RUNAUTO,  //  0
   RUNMANU,  //  1
