@@ -1,3 +1,4 @@
+build
 *~
 *.avr.mega.elf
 *.avr.mega.hex
