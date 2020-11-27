@@ -2,7 +2,7 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
-//   モード切替時刻設定を任意に出来るように (D0056・予定)
+//   モード切替時刻設定を任意に出来るように (D0056)
 //   運転モード表記を改める[tech-abco2:0000132] (D0055D)
 //   定義をabco2.hに移行した。(D0055C)
 //   運転モードの自動切り替えを1分毎から1秒毎確認に変更(D0055)
@@ -54,8 +54,8 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0055D";
-const signed long ccmver = 0x68010 + 55;
+const char *VERSION = "D0056 ";
+const signed long ccmver = 0x68010 + 56;
 
 /////////////////////////////////////
 // Hardware Define
@@ -99,12 +99,12 @@ const byte U_InitPin_Sense=LOW;
 ////////////////////////////////////
 //Node basic infomation
 ///////////////////////////////////
-const char U_name[] PROGMEM= "ABCO2A05";//MAX 20 chars
+const char U_name[] PROGMEM= "ABCO2A06";//MAX 20 chars
 const char U_vender[] PROGMEM= "HOLLY";//MAX 20 chars
 const char U_uecsid[] PROGMEM= "10100C009999";//12 chars fixed
 const char U_footnote[] PROGMEM= "";
 //const int U_footnoteLetterNumber = 48;//Abolished after Ver 0.6
-char U_nodename[20] = "ABCO2A05";//MAX 19chars
+char U_nodename[20] = "ABCO2A06";//MAX 19chars
 UECSOriginalAttribute U_orgAttribute;
 
 //////////////////////////////////
@@ -338,7 +338,7 @@ void UserEverySecond() {
       DayTime = false;
     }
   }
-  if (DayTime) {
+  if (DayTime==true) {
     ShowDayStatus = 0;
   } else {
     ShowDayStatus = 1;
