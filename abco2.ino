@@ -2,6 +2,7 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
+//   setMode()を別ファイルにした (D0056A)
 //   モード切替時刻設定を任意に出来るように (D0056)
 //   運転モード表記を改める[tech-abco2:0000132] (D0055D)
 //   定義をabco2.hに移行した。(D0055C)
@@ -54,7 +55,7 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0056 ";
+const char *VERSION = "D0056A";
 const signed long ccmver = 0x68010 + 56;
 
 /////////////////////////////////////
@@ -343,14 +344,14 @@ void UserEverySecond() {
   } else {
     ShowDayStatus = 1;
   }
-  if (U_ccmList[CCMID_RUNMODE].value == 0) { // RUN MODE is AUTO
+  if (U_ccmList[CCMID_RUNMODE].value == 0) { // RUN MODE is RUNAUTO (自動)
     //    Serial.begin(115200);
     //Serial.print(now.Hour(),DEC);
     if (DayTime) { // 昼ならば
       U_ccmList[CCMID_MODE].value = 2;
       modeRUN = 2;
       setMode2();
-    } else {
+    } else { // 昼ではないならば
       if (U_ccmList[CCMID_BURNER].value == 0) { // Burner STOPPED
 	//Serial.println(" and BURNER STOPPED setMode0()");
 	U_ccmList[CCMID_MODE].value = 0;
@@ -509,7 +510,7 @@ void setup(){
 //---------------------------------------------------------
 void ChangeValve(){
   switch(U_ccmList[CCMID_RUNMODE].value) {
-  case 1: //  手動モード切替
+  case 1: //  プリセットモードならば
     switch(U_ccmList[CCMID_MODE].value) {
     case 0:  // MODE0:
       setMode0();
@@ -537,7 +538,7 @@ void ChangeValve(){
       return;
     }
     break;
-  case 2:// 自由切替
+  case 2:// 手動
     U_ccmList[CCMID_MODE].value = 8; // FREE-MODE
     modeRUN = 8;
     switch(U_ccmList[CCMID_BLOWER].value) {
@@ -690,127 +691,6 @@ void emgstop(void) {
   U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111000111000;  // MOTORT and VALVE
   U_ccmList[CCMID_cnd].value |= 0b01000000000000000000000000000000;  // EMERGENCY STOP
   delay(2000);
-}
-
-// Mode0 全閉
-void setMode0(void) {
-  modeRUN = 0;
-  vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV4_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV5_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
-  stop_blower();
-  stop_pump();
-  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
-}
-
-// Mode1 CO2貯蔵
-void setMode1(void) {
-  modeRUN = 1;
-  vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV2_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV4_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV5_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV6_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
-  run_blower();
-  run_pump();
-  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
-}
-
-// Mode2 放散(1): チャンバーair導入
-void setMode2(void) {
-  modeRUN = 2;
-  vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV3_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV4_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV7_OPEN,CCMID_cnd);
-  run_blower();
-  stop_pump();
-  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
-}
-
-// Mode3 放散(2):外部air導入
-void setMode3(void) {
-  modeRUN = 3;
-  vlv_ctrl(VLV1_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV4_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV7_OPEN,CCMID_cnd);
-  run_blower();
-  stop_pump();
-  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
-}
-
-// Mode4 外気導入
-void setMode4(void) {
-  modeRUN = 4;
-  vlv_ctrl(VLV1_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV4_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV5_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV6_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV7_OPEN,CCMID_cnd);
-  run_blower();
-  stop_pump();
-  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
-}
-
-// Mode5 冷却
-void setMode5(void) {
-  modeRUN = 5;
-  vlv_ctrl(VLV1_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV4_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
-  run_blower();
-  stop_pump();
-  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
-}
-
-// Mode6 全開
-void setMode6(void) {
-  modeRUN = 6;
-  vlv_ctrl(VLV1_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV4_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV6_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
-  stop_blower();
-  stop_pump();
-  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
-}
-
-// Mode7 緊急停止
-void setMode7(void) {
-  modeRUN = 7;
-  vlv_ctrl(VLV1_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV2_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV3_CLOSE,CCMID_cnd);
-  vlv_ctrl(VLV4_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV6_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV7_CLOSE,CCMID_cnd);
-  U_ccmList[CCMID_cnd].value &= 0b01111111111111110000111000111000;  // MOTOR and VALVE
-  U_ccmList[CCMID_cnd].value |= 0b01000000000000000000000000000000;  // EMERGENCY STOP
-  stop_blower();
-  stop_pump();
 }
 
 void configure_wdt(void) {

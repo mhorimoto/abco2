@@ -369,9 +369,9 @@ const char RUNAUTO[]     PROGMEM="自動";
 const char RUNMANU[]     PROGMEM="プリセット";
 const char RUNFREE[]     PROGMEM="手動";
 const char *StrRUN[3] = {
-  RUNAUTO,  //  0
-  RUNMANU,  //  1
-  RUNFREE   //  2
+  RUNAUTO,  //  0 - 自動
+  RUNMANU,  //  1 - プリセット
+  RUNFREE   //  2 - 手動
 };
 signed long runMODE,PrunMODE;
 
