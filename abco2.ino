@@ -2,6 +2,7 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
+//   バルブシーケンスを20201117に合致させる (D0056B)
 //   setMode()を別ファイルにした (D0056A)
 //   モード切替時刻設定を任意に出来るように (D0056)
 //   運転モード表記を改める[tech-abco2:0000132] (D0055D)
@@ -55,7 +56,7 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0056A";
+const char *VERSION = "D0056B";
 const signed long ccmver = 0x68010 + 56;
 
 /////////////////////////////////////
@@ -479,16 +480,7 @@ void setup(){
   }
 
   // Full Open Valve
-  vlv_ctrl(VLV1_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV2_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV3_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV4_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV5_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV6_OPEN,CCMID_cnd);
-  vlv_ctrl(VLV7_OPEN,CCMID_cnd);
-  stop_blower();
-  stop_pump();
-  U_ccmList[CCMID_cnd].value &= 0b00111111111111111111111111111111;  // RESET E-STOP BIT
+  setMode6();
 
   init_mcp9600();
   sprintf(lcdtitle,"ABCO2 %6s",VERSION);
