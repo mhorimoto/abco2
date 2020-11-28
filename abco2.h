@@ -364,7 +364,7 @@ const char *StrMODE[9] = {
   MODE7,     //  7
   MODEX      //  8
 };
-signed long modeRUN,PmodeRUN;
+signed long modeRUN,PmodeRUN; // 現在の動作モードと直近の動作モード
 
 const char StrRUNMODE[]  PROGMEM="運転種別";
 const char RUNAUTO[]     PROGMEM="自動";
@@ -382,9 +382,10 @@ const char DATEMODE[] PROGMEM = "昼夜設定";
 const char DATEAUTO[] PROGMEM = "自動判定";
 const char DATEMANU[] PROGMEM = "任意指定";
 const char *StrDATEMODE[2] = {
-  DATEAUTO,
-  DATEMANU
+			      DATEAUTO,
+			      DATEMANU
 };
+const char DATEMODEdesc1[] PROGMEM = "運転種別が自動の時限定<br>6:00〜18:00が昼間";
 signed long vDateMode;
 
 const char DAYSTART[] PROGMEM = "昼開始時刻";

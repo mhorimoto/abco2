@@ -2,7 +2,8 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
-//   バルブシーケンスを20201117に合致させる (D0056B)
+//   T-6が50℃以上になったらMODE-5,6を繰り返す予定。(D0057)
+//   バルブシーケンスを20201117に合致させる。K33ICBの単位表記を改める。 (D0056B)
 //   setMode()を別ファイルにした (D0056A)
 //   モード切替時刻設定を任意に出来るように (D0056)
 //   運転モード表記を改める[tech-abco2:0000132] (D0055D)
@@ -56,8 +57,8 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0056B";
-const signed long ccmver = 0x68010 + 56;
+const char *VERSION = "D0057 ";
+const signed long ccmver = 0x68010 + 57;
 
 /////////////////////////////////////
 // Hardware Define
@@ -101,12 +102,12 @@ const byte U_InitPin_Sense=LOW;
 ////////////////////////////////////
 //Node basic infomation
 ///////////////////////////////////
-const char U_name[] PROGMEM= "ABCO2A06";//MAX 20 chars
+const char U_name[] PROGMEM= "ABCO2A08";//MAX 20 chars
 const char U_vender[] PROGMEM= "HOLLY";//MAX 20 chars
 const char U_uecsid[] PROGMEM= "10100C009999";//12 chars fixed
 const char U_footnote[] PROGMEM= "";
 //const int U_footnoteLetterNumber = 48;//Abolished after Ver 0.6
-char U_nodename[20] = "ABCO2A06";//MAX 19chars
+char U_nodename[20] = "ABCO2A08";//MAX 19chars
 UECSOriginalAttribute U_orgAttribute;
 
 //////////////////////////////////
@@ -150,7 +151,7 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   {WATER_LVL1, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[0]),0,0,0},
   {WATER_LVL2, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[1]),0,0,0},
   {PRESS_LVL,  UECSSHOWSTRING, NONES, NONES, StrPRESS_LVL,2,&(ShowPressLevel[0]),0,0,0},
-  {DATEMODE,   UECSSELECTDATA, NONES, NONES, StrDATEMODE, 2, &(vDateMode), 0, 0, 0},
+  {DATEMODE,   UECSSELECTDATA, NONES, DATEMODEdesc1, StrDATEMODE, 2, &(vDateMode), 0, 0, 0},
   {DAYSTART,   UECSINPUTDATA,  HOURUNIT, NONES, DUMMY,       0, &(daystart_hour), 0, 24, 0},
   {NIGHTSTART, UECSINPUTDATA,  HOURUNIT, NONES, DUMMY,       0, &(nightstart_hour), 0, 24, 0},
   {DAYSTATUS,  UECSSHOWSTRING, NONES, NONES, StrDAYSTATUS,2,&(ShowDayStatus),0,0,0},
@@ -266,6 +267,11 @@ const char ccmNameCnd[] PROGMEM= "NodeCondition";
 const char ccmTypeCnd[] PROGMEM= "cnd.mCD";
 const char ccmUnitCnd[] PROGMEM= "";
 
+//
+//  Over Heat condition data
+//
+int   oht_status = 0;
+int   oht_counter= 5;
 
 void UserInit(){
   //MAC address is printed on sticker of Ethernet Shield.
@@ -373,6 +379,10 @@ void UserEveryMinute() {
   float temp;
   int   mcp_id;
   k33_ope();
+  if ( oht_status != 0 ) {
+    oht_counter--;
+    if ( oht_counter < 0 ) oht_counter = 0;
+  }
   for(mcp_id=0;mcp_id<8;mcp_id++) {
     if (mcp96_present[mcp_id]) {
       temp = mcp[mcp_id].readThermocouple();
@@ -382,6 +392,7 @@ void UserEveryMinute() {
     t1tValue[mcp_id] = temp * 10.0;
     U_ccmList[CCMID_TCTemp1+mcp_id].value = temp * 10.0;
   }
+  over_heat_recovery(50.0);  //  T-6 オーバーヒート確認
 }
 void UserEveryLoop() {
 }
@@ -655,6 +666,41 @@ void Reset_lcdtext(void) {
   int i;
   for(i=0;i<17;i++) {
     lcdtext[i] = (char)NULL;
+  }
+}
+//
+//  float oht = オーバーヒート温度
+//
+void over_heat_recovery(float oht) {
+  // T6 t1tValue[5]
+  if (t1tValue[5]>=oht) {
+    if (oht_status==0) { // Over Heatになったばかり
+      PmodeRUN = modeRUN; // 直前の動作モードを保存する
+      oht_status = 1;     // Over Heat 冷却 Status に変更する
+      oht_counter = 5;    // 冷却時間は5min UserEveryMinute() にてデクリメントする
+    }
+    switch(oht_status) {
+    case 1: //  MODE-5 冷却
+      if (oht_counter>0) {
+	setMode5(); // 5min
+      } else {
+	oht_status = 2;
+	oht_counter=5;
+      }
+      break;
+    case 2: // MODE-6  全開
+      if (oht_counter>0) {
+	setMode6(); // 5min
+      } else {
+	oht_status = 1;
+	oht_counter = 5;
+      }
+      break;
+    }
+  } else {
+    oht_status = 0;
+    oht_counter = 5;
+    modeRUN = PmodeRUN;
   }
 }
 
