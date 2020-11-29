@@ -288,18 +288,18 @@ void UserInit(){
   //You must assign unique MAC address to each nodes.
   //MACアドレス設定、必ずEthernet Shieldに書かれた値を入力して下さい。
   //全てのノードに異なるMACアドレスを設定する必要があります。
-  //U_orgAttribute.mac[0] = EEPROM.read(4090+0); // 0x02;
-  //U_orgAttribute.mac[1] = EEPROM.read(4090+1); // 0xa2;
-  //U_orgAttribute.mac[2] = EEPROM.read(4090+2); // 0x73;
-  //U_orgAttribute.mac[3] = EEPROM.read(4090+3); // 0x8f;
-  //U_orgAttribute.mac[4] = EEPROM.read(4090+4); // 0x00;
-  //U_orgAttribute.mac[5] = EEPROM.read(4090+5); // 0x01;
-  U_orgAttribute.mac[0] = 0x02;
-  U_orgAttribute.mac[1] = 0xa2;
-  U_orgAttribute.mac[2] = 0x73;
-  U_orgAttribute.mac[3] = 0x8f;
-  U_orgAttribute.mac[4] = 0x00;
-  U_orgAttribute.mac[5] = 0x02;
+  U_orgAttribute.mac[0] = EEPROM.read(4090+0); // 0x02;
+  U_orgAttribute.mac[1] = EEPROM.read(4090+1); // 0xa2;
+  U_orgAttribute.mac[2] = EEPROM.read(4090+2); // 0x73;
+  U_orgAttribute.mac[3] = EEPROM.read(4090+3); // 0x8f;
+  U_orgAttribute.mac[4] = EEPROM.read(4090+4); // 0x00;
+  U_orgAttribute.mac[5] = EEPROM.read(4090+5); // 0x01;
+  //U_orgAttribute.mac[0] = 0x02;
+  //U_orgAttribute.mac[1] = 0xa2;
+  //U_orgAttribute.mac[2] = 0x73;
+  //U_orgAttribute.mac[3] = 0x8f;
+  //U_orgAttribute.mac[4] = 0x00;
+  //U_orgAttribute.mac[5] = 0x02;
 
   wdt_reset();
   //Set ccm list
@@ -407,10 +407,10 @@ void UserEveryMinute() {
       temp = -10.0;
     }
     if ((mcp_id==5)&&(U_ccmList[CCMID_T6TEST].value==1)) {  /* mcp_id=5 is T-6 , 0: Normal, 1:Force */
-      temp = U_ccmList[CCMID_T6TESTVALUE].value ;  /* Simulated Temperature */
+      temp = U_ccmList[CCMID_T6TESTVALUE].value /10.0;  /* Simulated Temperature */
     }
-    t1tValue[mcp_id] = temp;
-    U_ccmList[CCMID_TCTemp1+mcp_id].value = temp;
+    t1tValue[mcp_id] = temp * 10.0;
+    U_ccmList[CCMID_TCTemp1+mcp_id].value = temp * 10.0;
   }
   over_heat_recovery(50.0);  //  T-6 オーバーヒート確認
 }
