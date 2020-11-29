@@ -57,7 +57,7 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0057 ";
+const char *VERSION = "D0057G";
 const signed long ccmver = 0x68010 + 57;
 
 /////////////////////////////////////
@@ -119,7 +119,7 @@ UECSOriginalAttribute U_orgAttribute;
 
 
 //表示素材の登録
-const int U_HtmlLine = 33; //Total number of HTML table rows.
+const int U_HtmlLine = 35; //Total number of HTML table rows.
 struct UECSUserHtml U_html[U_HtmlLine]={
   //{名前,    入出力形式,     単位,     詳細説明, 選択肢文字列,  選択肢数,値,	      最小値,最大値,小数桁数}
   {StrRUNMODE,UECSSELECTDATA, NONES,    VLVNOTE0, StrRUN,        3,       &(runMODE), 0,     0,     0},
@@ -152,9 +152,11 @@ struct UECSUserHtml U_html[U_HtmlLine]={
   {WATER_LVL2, UECSSHOWSTRING, NONES, NONES, StrWATER_LVL,2,&(ShowWaterLevel[1]),0,0,0},
   {PRESS_LVL,  UECSSHOWSTRING, NONES, NONES, StrPRESS_LVL,2,&(ShowPressLevel[0]),0,0,0},
   {DATEMODE,   UECSSELECTDATA, NONES, DATEMODEdesc1, StrDATEMODE, 2, &(vDateMode), 0, 0, 0},
-  {DAYSTART,   UECSINPUTDATA,  HOURUNIT, NONES, DUMMY,       0, &(daystart_hour), 0, 24, 0},
-  {NIGHTSTART, UECSINPUTDATA,  HOURUNIT, NONES, DUMMY,       0, &(nightstart_hour), 0, 24, 0},
+  {DAYSTART,   UECSINPUTDATA,  HOURUNIT, NONES, DUMMY,    0,&(daystart_hour), 0, 24, 0},
+  {NIGHTSTART, UECSINPUTDATA,  HOURUNIT, NONES, DUMMY,    0,&(nightstart_hour), 0, 24, 0},
   {DAYSTATUS,  UECSSHOWSTRING, NONES, NONES, StrDAYSTATUS,2,&(ShowDayStatus),0,0,0},
+  {T6TESTFLG,  UECSSELECTDATA, NONES, NONES, StrT6TEST,   2,&(vT6TestFlg), 0, 0, 0},
+  {T6TESTVAL,  UECSINPUTDATA,  TempUNIT,NONES, DUMMY,     0,&(vT6tValue),-100,1000,T1T_DECIMAL_DIGIT}
 };
 
 
@@ -187,13 +189,14 @@ enum {
   CCMID_DATEMODE,
   CCMID_DAYSTART,
   CCMID_NIGHTSTART,
+  CCMID_T6TEST,
+  CCMID_T6TESTVALUE,
   CCMID_dummy,
 };
 
 
 const int U_MAX_CCM = CCMID_dummy;
 UECSCCM U_ccmList[U_MAX_CCM];
-
 
 const char ccmUnitTemp[] PROGMEM= "C";
 const char ccmNameTemp1[] PROGMEM= "T1温度";
@@ -263,6 +266,13 @@ const char ccmNameNightStart[] PROGMEM="夜間開始時刻";
 const char ccmTypeNightStart[] PROGMEM="nightStart.mCD";
 const char ccmUnitNightStart[] PROGMEM="時";
 
+const char ccmNameT6Test[] PROGMEM = "T-6温度設定";
+const char ccmTypeT6Test[] PROGMEM = "t6test.mCD";
+const char ccmUnitT6Test[] PROGMEM = "";
+
+const char ccmNameT6TestTemp[] PROGMEM = "T-6温度";
+const char ccmTypeT6TestTemp[] PROGMEM = "t6testTemp.mCD";
+
 const char ccmNameCnd[] PROGMEM= "NodeCondition";
 const char ccmTypeCnd[] PROGMEM= "cnd.mCD";
 const char ccmUnitCnd[] PROGMEM= "";
@@ -271,7 +281,7 @@ const char ccmUnitCnd[] PROGMEM= "";
 //  Over Heat condition data
 //
 int   oht_status = 0;
-int   oht_counter= 5;
+int   oht_counter= 5;  // 単位は分 void UserEveryMinute() 内で減算していく
 
 void UserInit(){
   //MAC address is printed on sticker of Ethernet Shield.
@@ -316,6 +326,8 @@ void UserInit(){
   UECSsetCCM(true, CCMID_DATEMODE,ccmNameDateMode,ccmTypeDateMode,ccmUnitDateMode, 29, 0, A_10S_0);
   UECSsetCCM(true, CCMID_DAYSTART,ccmNameDayStart,ccmTypeDayStart,ccmUnitDayStart, 29, 0, A_10S_0);
   UECSsetCCM(true, CCMID_NIGHTSTART,ccmNameNightStart,ccmTypeNightStart,ccmUnitNightStart, 29, 0, A_10S_0);
+  UECSsetCCM(true, CCMID_T6TEST,ccmNameT6Test,ccmTypeT6Test,NONES, 29, 0, A_10S_0);
+  UECSsetCCM(true, CCMID_T6TESTVALUE,ccmNameT6TestTemp,ccmTypeT6TestTemp,ccmUnitTemp,29, 1, A_10S_0);
 }
 
 
@@ -327,6 +339,8 @@ void OnWebFormRecieved() {
   U_ccmList[CCMID_DATEMODE].value = vDateMode;
   U_ccmList[CCMID_DAYSTART].value = daystart_hour;
   U_ccmList[CCMID_NIGHTSTART].value = nightstart_hour;
+  U_ccmList[CCMID_T6TEST].value       = vT6TestFlg; /* 0: Normal, 1:Force */
+  U_ccmList[CCMID_T6TESTVALUE].value  = vT6tValue;  /* Simulated Temperature */
   ChangeValve();
 }
 
@@ -352,26 +366,29 @@ void UserEverySecond() {
     ShowDayStatus = 1;
   }
   if (U_ccmList[CCMID_RUNMODE].value == 0) { // RUN MODE is RUNAUTO (自動)
-    //    Serial.begin(115200);
-    //Serial.print(now.Hour(),DEC);
-    if (DayTime) { // 昼ならば
-      U_ccmList[CCMID_MODE].value = 2;
-      modeRUN = 2;
-      setMode2();
-    } else { // 昼ではないならば
-      if (U_ccmList[CCMID_BURNER].value == 0) { // Burner STOPPED
-	//Serial.println(" and BURNER STOPPED setMode0()");
-	U_ccmList[CCMID_MODE].value = 0;
-	modeRUN = 0;
-	setMode0();
-      } else {      // Burner RUNNING
-	//Serial.println(" and BURNER RUNNING setMode1()");
-	U_ccmList[CCMID_MODE].value = 1;
-	modeRUN = 1;
-	setMode1();
+    if (oht_status==0) { // オーバーヒートしていないならば
+      //    Serial.begin(115200);
+      //Serial.print(now.Hour(),DEC);
+      if (DayTime) { // 昼ならば
+	U_ccmList[CCMID_MODE].value = 2;
+	modeRUN = 2;
+	setMode2();
+      } else { // 昼ではないならば
+	if (U_ccmList[CCMID_BURNER].value == 0) { // Burner STOPPED
+	  //Serial.println(" and BURNER STOPPED setMode0()");
+	  U_ccmList[CCMID_MODE].value = 0;
+	  modeRUN = 0;
+	  setMode0();
+	} else {      // Burner RUNNING
+	  //Serial.println(" and BURNER RUNNING setMode1()");
+	  U_ccmList[CCMID_MODE].value = 1;
+	  modeRUN = 1;
+	  setMode1();
+	}
       }
-    }
     //Serial.end();
+    } else { // オーバーヒートしているならば
+    }
   }
   wdt_reset();
 }
@@ -389,8 +406,11 @@ void UserEveryMinute() {
     } else {
       temp = -10.0;
     }
-    t1tValue[mcp_id] = temp * 10.0;
-    U_ccmList[CCMID_TCTemp1+mcp_id].value = temp * 10.0;
+    if ((mcp_id==5)&&(U_ccmList[CCMID_T6TEST].value==1)) {  /* mcp_id=5 is T-6 , 0: Normal, 1:Force */
+      temp = U_ccmList[CCMID_T6TESTVALUE].value ;  /* Simulated Temperature */
+    }
+    t1tValue[mcp_id] = temp;
+    U_ccmList[CCMID_TCTemp1+mcp_id].value = temp;
   }
   over_heat_recovery(50.0);  //  T-6 オーバーヒート確認
 }
@@ -453,6 +473,10 @@ void loop(){
   ChangeValve();
 }
 
+//
+//  SETUP START HERE
+//
+//
 void setup(){
   //  extern byte megaEtherSS;
   int i;
@@ -504,6 +528,7 @@ void setup(){
   lcd.print(Ethernet.localIP());
   ntprc = ntp_ope();
   wdt_reset();
+  vT6TestFlg = 0;
   lcd.setCursor(0,1);
   lcd.print("EXIT setup()    ");
 }
@@ -560,7 +585,6 @@ void ChangeValve(){
       stop_pump();
       break;
     }
-    
     switch(set_VLV_SELECT[0]) {
     case 0:
       vlv_ctrl(VLV1_UNKNOWN,CCMID_cnd);
@@ -673,7 +697,23 @@ void Reset_lcdtext(void) {
 //
 void over_heat_recovery(float oht) {
   // T6 t1tValue[5]
-  if (t1tValue[5]>=oht) {
+  int i;
+  Serial.begin(115200);
+  Serial.print("Enter over_heat_recovery(");
+  Serial.print(oht);
+  Serial.println(")");
+  for(i=0;i<8;i++) {
+    Serial.print("t1tValue[");
+    Serial.print(i);
+    Serial.print("]=");
+    Serial.println(t1tValue[i]);
+  }
+  Serial.print("oht_counter=");
+  Serial.println(oht_counter);
+  Serial.print("oht_status=");
+  Serial.println(oht_status);
+  Serial.end();
+  if (t1tValue[5]>=(oht*10)) {
     if (oht_status==0) { // Over Heatになったばかり
       PmodeRUN = modeRUN; // 直前の動作モードを保存する
       oht_status = 1;     // Over Heat 冷却 Status に変更する
@@ -682,6 +722,8 @@ void over_heat_recovery(float oht) {
     switch(oht_status) {
     case 1: //  MODE-5 冷却
       if (oht_counter>0) {
+	U_ccmList[CCMID_MODE].value = 5;
+	modeRUN = 5;
 	setMode5(); // 5min
       } else {
 	oht_status = 2;
@@ -690,6 +732,8 @@ void over_heat_recovery(float oht) {
       break;
     case 2: // MODE-6  全開
       if (oht_counter>0) {
+	U_ccmList[CCMID_MODE].value = 6;
+	modeRUN = 6;
 	setMode6(); // 5min
       } else {
 	oht_status = 1;
@@ -701,6 +745,7 @@ void over_heat_recovery(float oht) {
     oht_status = 0;
     oht_counter = 5;
     modeRUN = PmodeRUN;
+    U_ccmList[CCMID_MODE].value = modeRUN;
   }
 }
 

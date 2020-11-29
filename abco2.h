@@ -404,3 +404,16 @@ const char *StrDAYSTATUS[2] = {
 signed long ShowDayStatus;
 
 boolean DayTime;
+
+/*   T-6 Debug用   */
+const char T6TESTFLG[] PROGMEM = "T-6温度設定";
+const char T6TESTNORMAL[] PROGMEM = "通常・受動";
+const char T6TESTFORCE[] PROGMEM  = "試験・強制";
+const char *StrT6TEST[2] = {
+			    T6TESTNORMAL,
+			    T6TESTFORCE
+};
+const char T6TESTVAL[] PROGMEM = "T-6強制設定値";
+
+signed long vT6TestFlg,vT6tValue;
+
