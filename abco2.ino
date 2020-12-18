@@ -2,6 +2,7 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
+//   夜間でバーな停止中にMode-6にするように変更。(D0058)
 //   T-6が50℃以上になったらMODE-5,6を繰り返す予定。(D0057)
 //   バルブシーケンスを20201117に合致させる。K33ICBの単位表記を改める。 (D0056B)
 //   setMode()を別ファイルにした (D0056A)
@@ -57,8 +58,8 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0057G";
-const signed long ccmver = 0x68010 + 57;
+const char *VERSION = "D0058 ";
+const signed long ccmver = 0x68010 + 58;
 
 /////////////////////////////////////
 // Hardware Define
@@ -377,8 +378,8 @@ void UserEverySecond() {
 	if (U_ccmList[CCMID_BURNER].value == 0) { // Burner STOPPED
 	  //Serial.println(" and BURNER STOPPED setMode0()");
 	  U_ccmList[CCMID_MODE].value = 0;
-	  modeRUN = 0;
-	  setMode0();
+	  modeRUN = 6;
+	  setMode6();
 	} else {      // Burner RUNNING
 	  //Serial.println(" and BURNER RUNNING setMode1()");
 	  U_ccmList[CCMID_MODE].value = 1;
