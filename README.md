@@ -32,7 +32,24 @@
 
 ## How to compile and install
 
-    # cd ~/work
+### Arduino IDEで実施する場合
+
+　普通にコンパイルしてアップロードしてください。
+
+### arduino-cliで実施する場合
+
+    # cd abco2作業ディレクトリの１つ上
     # arduino-cli compile -b arduino:avr:mega abco2
     # arduino-cli upload -p /dev/ttyUSB0 -b arduino:avr:mega abco2
+
+## Need external libraries
+
+* [Ethernet2](https://github.com/adafruit/Ethernet2)
+* [UARDECS_MEGA](http://uecs.org/arduino/uardecs.html)
+* [LiquidCrystal_I2C](https://github.com/marcoschwartz/LiquidCrystal_I2C)
+* [K30_I2C](https://github.com/FirstCypress/K30_CO2_I2C_Arduino)
+* [RtcDS3231](https://github.com/Makuna/Rtc/wiki)
+* [AT24CX](https://oberguru.net/elektronik/eeprom/at24cx-at24c32-at24c64-at24c128-at24c256-at24c512.html)
+* [Adafruit_I2C*](https://github.com/adafruit/Adafruit_BusIO)
+* [Adafruit_MCP9600](https://github.com/adafruit/Adafruit_MCP9600)
 
