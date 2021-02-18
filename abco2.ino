@@ -2,6 +2,7 @@
 // -*- mode : C++ -*-
 //[概要]
 // ABCO2の基幹的プログラム
+//   Uardecs_megaのバージョンをholly_Uardecs_megaに変更。(D0058A)
 //   夜間でバーナ停止中にMode-6にするように変更。(D0058)
 //   T-6が50℃以上になったらMODE-5,6を繰り返す予定。(D0057)
 //   バルブシーケンスを20201117に合致させる。K33ICBの単位表記を改める。 (D0056B)
@@ -35,7 +36,7 @@
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include <EEPROM.h>
-#include <Uardecs_mega.h>
+#include <holly_Uardecs_mega.h>
 #include <LiquidCrystal_I2C.h>
 #include <Wire.h>
 #include <K30_I2C.h>
@@ -58,7 +59,7 @@ void get_mcusr(void) {
 }
 
 
-const char *VERSION = "D0058 ";
+const char *VERSION = "D0058A";
 const signed long ccmver = 0x68010 + 58;
 
 /////////////////////////////////////
@@ -479,7 +480,7 @@ void loop(){
 //
 //
 void setup(){
-  //  extern byte megaEtherSS;
+  //  extern btye megaEtherSS;
   int i;
   //  megaEtherSS = 53; // SS is pin 53
   //  pinMode(26,OUTPUT);

@@ -1,4 +1,19 @@
-# abco2
+abco2 D0058A
+============
+
+# コンパイル前の警告
+
+UECSライブラリは標準品ではなくて、HOLLY改造版(Power By HOLLY)を使用してください。
+DHCPによるIPアドレス取得とHTML記述で最近のブラウザが言語混乱をしないようにja明記をしています。
+なおHOLLY版ライブラリは
+
+[HOLLY_UARDECS_MEGA_Library](https://horimoto@bitbucket.org/horimoto/holly_uardecs_mega_library.git)
+
+こちらにあります。  
+このライブラリを Arduino のライブラリが納められるディレクトリに入れておいてください。
+
+現在、開発版で推奨されているBranchは D0058 です。master ではありませんので注意してください。
+このD0058をベースに独自のブランチで変更を加えてください。
 
 ## 運転種別
 
@@ -45,7 +60,7 @@
 ## Need external libraries
 
 * [Ethernet2](https://github.com/adafruit/Ethernet2)
-* [UARDECS_MEGA](http://uecs.org/arduino/uardecs.html)
+* [HOLLY_UARDECS_MEGA_Library](https://horimoto@bitbucket.org/horimoto/holly_uardecs_mega_library.git)
 * [LiquidCrystal_I2C](https://github.com/marcoschwartz/LiquidCrystal_I2C)
 * [K30_I2C](https://github.com/FirstCypress/K30_CO2_I2C_Arduino)
 * [RtcDS3231](https://github.com/Makuna/Rtc/wiki)
